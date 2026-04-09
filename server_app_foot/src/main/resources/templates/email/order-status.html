@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: #FF5722; padding: 30px; text-align: center; }
+        .header h1 { color: #fff; margin: 0; }
+        .body { padding: 30px; color: #333; }
+        .status-badge { display: inline-block; background: #FF5722; color: #fff; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #999; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>🍜 FoodRush</h1></div>
+    <div class="body">
+        <h2>Xin chào <span th:text="${firstName}">bạn</span>!</h2>
+        <p>Đơn hàng <strong th:text="${orderNumber}">#FR-xxx</strong> của bạn đã được cập nhật:</p>
+        <p><span class="status-badge" th:text="${status}">CONFIRMED</span></p>
+        <p>Cảm ơn bạn đã sử dụng FoodRush!</p>
+    </div>
+    <div class="footer">© 2026 FoodRush. Mọi quyền được bảo lưu.</div>
+</div>
+</body>
+</html>

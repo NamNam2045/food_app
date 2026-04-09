@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.foodrush: INFO
+    org.springframework.security: WARN
+    root: WARN

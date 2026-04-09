@@ -1,0 +1,1 @@
+ALTER TABLE addresses ALTER COLUMN country_code TYPE VARCHAR(2);

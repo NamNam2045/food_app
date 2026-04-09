@@ -1,0 +1,2 @@
+ALTER TABLE operating_hours ALTER COLUMN day_of_week TYPE INTEGER;
+ALTER TABLE reviews ALTER COLUMN rating TYPE INTEGER;
