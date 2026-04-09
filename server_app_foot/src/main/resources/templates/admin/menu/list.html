@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Thực đơn — FoodRush Admin</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/admin/restaurants}">Nhà hàng</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/admin/restaurants/{id}(id=${restaurant.id})}"
+                   th:text="${restaurant.name}"></a>
+            </li>
+            <li class="breadcrumb-item active">Thực đơn</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="mb-0 fw-bold" th:text="'Thực đơn: ' + ${restaurant.name}"></h4>
+            <p class="text-muted mb-0" style="font-size:.85rem;">Quản lý món ăn theo danh mục</p>
+        </div>
+    </div>
+
+    <!-- Accordion per category -->
+    <div class="accordion" id="menuAccordion">
+        <div th:if="${categories.empty}" class="text-center text-muted py-5">
+            <i class="bi bi-inbox" style="font-size:2rem;"></i>
+            <p class="mt-2">Nhà hàng chưa có danh mục thực đơn</p>
+        </div>
+
+        <div th:each="cat, iter : ${categories}"
+             class="accordion-item border-0 shadow-sm mb-3"
+             style="border-radius:12px;overflow:hidden;">
+            <h2 class="accordion-header" th:id="${'heading' + iter.index}">
+                <button class="accordion-button fw-semibold"
+                        th:class="${'accordion-button fw-semibold ' + (iter.index != 0 ? 'collapsed' : '')}"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        th:data-bs-target="${'#collapse' + iter.index}"
+                        th:aria-expanded="${iter.index == 0 ? 'true' : 'false'}"
+                        th:aria-controls="${'collapse' + iter.index}">
+                    <i class="bi bi-grid me-2 text-warning"></i>
+                    <span th:text="${cat.name}"></span>
+                    <span class="badge bg-secondary ms-2"
+                          th:text="${cat.items.size() + ' món'}"></span>
+                </button>
+            </h2>
+            <div th:id="${'collapse' + iter.index}"
+                 th:class="${'accordion-collapse collapse ' + (iter.index == 0 ? 'show' : '')}"
+                 th:aria-labelledby="${'heading' + iter.index}"
+                 data-bs-parent="#menuAccordion">
+                <div class="accordion-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên món</th>
+                                    <th>Mô tả</th>
+                                    <th>Giá</th>
+                                    <th>Có sẵn</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${cat.items.empty}">
+                                    <td colspan="5" class="text-center text-muted py-3">Chưa có món nào</td>
+                                </tr>
+                                <tr th:each="item : ${cat.items}">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img th:if="${item.imageUrl}" th:src="${item.imageUrl}"
+                                                 class="rounded" width="36" height="36"
+                                                 style="object-fit:cover;" alt="img"/>
+                                            <span class="fw-semibold" th:text="${item.name}"></span>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted" style="font-size:.82rem;max-width:200px;">
+                                        <span th:text="${#strings.abbreviate(item.description ?: '', 60)}"></span>
+                                    </td>
+                                    <td class="fw-semibold text-success">
+                                        <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT') + 'đ'}"></span>
+                                    </td>
+                                    <td>
+                                        <span th:class="${'badge ' + (item.available ? 'bg-success' : 'bg-danger')}"
+                                              th:text="${item.available ? 'Có sẵn' : 'Hết món'}"></span>
+                                    </td>
+                                    <td>
+                                        <form method="post"
+                                              th:action="@{/admin/restaurants/{rId}/menu/items/{itemId}/toggle(rId=${restaurant.id}, itemId=${item.id})}">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                            <button type="submit"
+                                                    th:class="${'btn btn-sm ' + (item.available ? 'btn-outline-danger' : 'btn-outline-success')}"
+                                                    th:title="${item.available ? 'Đánh dấu hết món' : 'Đánh dấu có sẵn'}">
+                                                <i th:class="${'bi ' + (item.available ? 'bi-eye-slash' : 'bi-eye')}"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

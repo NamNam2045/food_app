@@ -44,4 +44,13 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
             Pageable pageable);
 
     Page<Restaurant> findByOwnerIdAndActiveTrue(Long ownerId, Pageable pageable);
+
+    long countByActiveTrue();
+
+    /** Admin search — không lọc theo active, trả về tất cả nhà hàng */
+    @Query("SELECT r FROM Restaurant r WHERE " +
+           "LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Restaurant> findAllByNameContainingIgnoreCase(
+            @Param("search") String search,
+            Pageable pageable);
 }

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Chi tiết đơn hàng — FoodRush Admin</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/admin/orders}">Đơn hàng</a></li>
+            <li class="breadcrumb-item active" th:text="${order.orderNumber}"></li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+
+        <!-- Left: order info + items -->
+        <div class="col-lg-8">
+            <!-- Order header -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="fw-bold mb-1" th:text="'Đơn #' + ${order.orderNumber}"></h5>
+                            <p class="text-muted mb-0" style="font-size:.85rem;"
+                               th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></p>
+                        </div>
+                        <span th:class="${'badge fs-6 ' +
+                            (order.status.name() == 'DELIVERED' ? 'bg-success' :
+                             order.status.name() == 'CANCELLED' ? 'bg-danger' :
+                             order.status.name() == 'PENDING' ? 'bg-warning text-dark' :
+                             order.status.name() == 'PREPARING' ? 'bg-info' :
+                             order.status.name() == 'ON_THE_WAY' ? 'bg-primary' : 'bg-secondary')}"
+                              th:text="${order.status.name()}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order items -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-bag me-2 text-warning"></i>Món đã đặt
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Món</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-center">SL</th>
+                                    <th class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${order.items}">
+                                    <td>
+                                        <div class="fw-semibold" th:text="${item.menuItemName}"></div>
+                                        <div class="text-muted" style="font-size:.78rem;"
+                                             th:text="${item.specialInstructions}"></div>
+                                    </td>
+                                    <td class="text-end"
+                                        th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                    <td class="text-center" th:text="${item.quantity}"></td>
+                                    <td class="text-end fw-semibold text-success"
+                                        th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end text-muted">Tạm tính</td>
+                                    <td class="text-end"
+                                        th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                </tr>
+                                <tr th:if="${order.deliveryFee > 0}">
+                                    <td colspan="3" class="text-end text-muted">Phí giao hàng</td>
+                                    <td class="text-end"
+                                        th:text="${#numbers.formatDecimal(order.deliveryFee, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                </tr>
+                                <tr th:if="${order.discountAmount > 0}">
+                                    <td colspan="3" class="text-end text-success">Giảm giá</td>
+                                    <td class="text-end text-success fw-semibold"
+                                        th:text="${'-' + #numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Tổng cộng</td>
+                                    <td class="text-end fw-bold fs-6 text-success"
+                                        th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: customer + restaurant + payment info -->
+        <div class="col-lg-4">
+            <!-- Customer -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-person me-2 text-info"></i>Khách hàng
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 fw-semibold" th:text="${order.user.firstName + ' ' + order.user.lastName}"></p>
+                    <p class="mb-1 text-muted" style="font-size:.85rem;" th:text="${order.user.email}"></p>
+                    <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.user.phoneNumber}"></p>
+                </div>
+            </div>
+
+            <!-- Delivery address -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-geo-alt me-2 text-danger"></i>Địa chỉ giao hàng
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted" style="font-size:.85rem;"
+                       th:text="${order.deliveryAddressSnapshot}"></p>
+                </div>
+            </div>
+
+            <!-- Restaurant -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-shop me-2 text-success"></i>Nhà hàng
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 fw-semibold" th:text="${order.restaurant.name}"></p>
+                    <a th:href="@{/admin/restaurants/{id}(id=${order.restaurant.id})}"
+                       class="text-decoration-none" style="font-size:.85rem;color:#e67e22;">
+                        Xem nhà hàng <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Payment -->
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-credit-card me-2 text-primary"></i>Thanh toán
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div th:if="${order.payment}">
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr>
+                                <td class="text-muted" style="font-size:.82rem;">Phương thức</td>
+                                <td th:text="${order.payment.paymentMethod}"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted" style="font-size:.82rem;">Trạng thái</td>
+                                <td>
+                                    <span th:class="${'badge ' +
+                                        (order.payment.paymentStatus.name() == 'PAID' ? 'bg-success' :
+                                         order.payment.paymentStatus.name() == 'FAILED' ? 'bg-danger' : 'bg-warning text-dark')}"
+                                          th:text="${order.payment.paymentStatus.name()}"></span>
+                                </td>
+                            </tr>
+                            <tr th:if="${order.payment.transactionId}">
+                                <td class="text-muted" style="font-size:.82rem;">Mã GD</td>
+                                <td style="font-size:.82rem;" th:text="${order.payment.transactionId}"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div th:unless="${order.payment}" class="text-muted" style="font-size:.85rem;">
+                        Chưa có thông tin thanh toán
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

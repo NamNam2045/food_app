@@ -10,11 +10,21 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = {
+        "com.foodrush.auth",
+        "com.foodrush.cart",
+        "com.foodrush.menu",
+        "com.foodrush.order",
+        "com.foodrush.payment",
+        "com.foodrush.restaurant",
+        "com.foodrush.review",
+        "com.foodrush.notification"
+})
 @Slf4j
 public class GlobalExceptionHandler {
 
@@ -55,6 +65,13 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         return ApiResponse.error("VALIDATION_ERROR", "Dữ liệu không hợp lệ", errors);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNoResource(NoResourceFoundException ex) {
+        log.debug("Static resource not found: {}", ex.getMessage());
+        return ApiResponse.error("NOT_FOUND", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
