@@ -83,7 +83,7 @@
                     <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.user.phoneNumber}"></p>
                     <hr class="my-2"/>
                     <h6 class="fw-semibold mb-1" style="font-size:.85rem;">Địa chỉ giao</h6>
-                    <p class="mb-0 text-muted" style="font-size:.82rem;" th:text="${order.deliveryAddressSnapshot}"></p>
+                    <p class="mb-0 text-muted" style="font-size:.82rem;" th:text="${@addressUtil.format(order.deliveryAddressSnapshot)}"></p>
                     <div th:if="${order.specialInstructions}" class="mt-2">
                         <small class="text-muted"><i class="bi bi-chat-left-text me-1"></i>
                             <em th:text="${order.specialInstructions}"></em></small>
