@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{shipper/layout}">
+<head><title th:text="${'Đơn ' + order.orderNumber + ' — Shipper'}">Chi tiết đơn hàng</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="d-flex align-items-center mb-4 gap-2">
+        <a href="/shipper/orders" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="mb-0 fw-bold" th:text="'Đơn ' + ${order.orderNumber}">Chi tiết đơn hàng</h4>
+            <p class="text-muted mb-0" style="font-size:.85rem;"
+               th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></p>
+        </div>
+        <span th:class="${'ms-auto badge fs-6 ' +
+            (order.status.name() == 'DELIVERED'       ? 'bg-success' :
+             order.status.name() == 'ON_THE_WAY'      ? 'bg-primary' :
+             order.status.name() == 'PICKED_UP'       ? 'bg-info text-dark' :
+             order.status.name() == 'CANCELLED'       ? 'bg-danger'  : 'bg-secondary')}"
+              th:text="${order.status.name()}"></span>
+    </div>
+
+    <!-- Flash messages -->
+    <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- Order items -->
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-cart3 me-2"></i>Sản phẩm</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Tên món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Thành tiền</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${order.items}">
+                                <td th:text="${item.menuItemName}"></td>
+                                <td class="text-center" th:text="${item.quantity}"></td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                                <td class="text-end fw-semibold"
+                                    th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end">Tạm tính</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end">Phí giao hàng</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(order.deliveryFee, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                            </tr>
+                            <tr th:if="${order.discountAmount != null and order.discountAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                <td colspan="3" class="text-end text-danger">Giảm giá</td>
+                                <td class="text-end text-danger"
+                                    th:text="${'-' + #numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Tổng cộng</td>
+                                <td class="text-end fw-bold text-success fs-6"
+                                    th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Delivery address -->
+            <div th:if="${order.deliveryAddressSnapshot != null}" class="card border-0 shadow-sm mt-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0" th:text="${order.deliveryAddressSnapshot}"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side info -->
+        <div class="col-12 col-lg-4">
+
+            <!-- Customer info -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-person me-2"></i>Khách hàng</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 fw-semibold" th:text="${order.user.firstName + ' ' + order.user.lastName}"></p>
+                    <p class="mb-1 text-muted" style="font-size:.85rem;" th:text="${order.user.phone}"></p>
+                    <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.user.email}"></p>
+                </div>
+            </div>
+
+            <!-- Restaurant info -->
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-shop me-2"></i>Nhà hàng</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 fw-semibold" th:text="${order.restaurant.name}"></p>
+                    <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.restaurant.address}"></p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-arrow-repeat me-2"></i>Cập nhật trạng thái</h6>
+                </div>
+                <div class="card-body d-grid gap-2">
+                    <th:block th:switch="${order.status.name()}">
+                        <form th:case="'PICKED_UP'"
+                              th:action="@{/shipper/orders/{id}/status(id=${order.id})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="newStatus" value="ON_THE_WAY"/>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-truck me-2"></i>Đang trên đường giao
+                            </button>
+                        </form>
+                        <form th:case="'ON_THE_WAY'"
+                              th:action="@{/shipper/orders/{id}/status(id=${order.id})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="newStatus" value="DELIVERED"/>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-circle me-2"></i>Giao hàng thành công
+                            </button>
+                        </form>
+                        <p th:case="'DELIVERED'" class="text-success mb-0 text-center">
+                            <i class="bi bi-check-circle-fill me-1"></i>Đã giao thành công
+                            <span th:if="${order.deliveredAt != null}" class="d-block text-muted"
+                                  style="font-size:.8rem;"
+                                  th:text="${#temporals.format(order.deliveredAt, 'dd/MM/yyyy HH:mm')}"></span>
+                        </p>
+                        <p th:case="'CANCELLED'" class="text-danger mb-0 text-center">
+                            <i class="bi bi-x-circle-fill me-1"></i>Đơn đã huỷ
+                        </p>
+                    </th:block>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -62,9 +62,69 @@ public class SecurityConfig {
                 .build();
     }
 
-    /** Filter chain cho REST API (JWT stateless) */
+    /** Filter chain cho Restaurant Owner Web */
     @Bean
     @Order(2)
+    public SecurityFilterChain ownerFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/owner/**")
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/owner/login").permitAll()
+                        .anyRequest().hasRole("RESTAURANT_ADMIN")
+                )
+                .formLogin(form -> form
+                        .loginPage("/owner/login")
+                        .loginProcessingUrl("/owner/login")
+                        .defaultSuccessUrl("/owner/dashboard", true)
+                        .failureUrl("/owner/login?error")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/owner/logout")
+                        .logoutSuccessUrl("/owner/login?logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                )
+                .sessionManagement(s -> s.maximumSessions(3))
+                .build();
+    }
+
+    /** Filter chain cho Delivery Agent Web */
+    @Bean
+    @Order(3)
+    public SecurityFilterChain shipperFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/shipper/**")
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/shipper/login").permitAll()
+                        .anyRequest().hasRole("DELIVERY_AGENT")
+                )
+                .formLogin(form -> form
+                        .loginPage("/shipper/login")
+                        .loginProcessingUrl("/shipper/login")
+                        .defaultSuccessUrl("/shipper/dashboard", true)
+                        .failureUrl("/shipper/login?error")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/shipper/logout")
+                        .logoutSuccessUrl("/shipper/login?logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                )
+                .sessionManagement(s -> s.maximumSessions(3))
+                .build();
+    }
+
+    /** Filter chain cho REST API (JWT stateless) */
+    @Bean
+    @Order(4)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         return http
                 .securityMatcher("/api/**", "/ws/**", "/swagger-ui/**", "/api-docs/**", "/actuator/**")
@@ -92,7 +152,7 @@ public class SecurityConfig {
 
     /** Fallback filter chain: cho phép static resources, favicon, error page */
     @Bean
-    @Order(3)
+    @Order(5)
     public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
         return http
                 .securityMatcher("/favicon.ico", "/error", "/static/**", "/css/**", "/js/**", "/images/**")

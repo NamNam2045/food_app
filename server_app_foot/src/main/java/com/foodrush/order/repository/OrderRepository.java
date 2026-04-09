@@ -57,4 +57,57 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     @Query("SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.restaurant ORDER BY o.createdAt DESC")
     List<Order> findRecentForAdmin(Pageable pageable);
+
+    // --- Owner portal ---
+    @Query(value = "SELECT DISTINCT o FROM Order o JOIN FETCH o.user " +
+                   "WHERE o.restaurant.id = :restaurantId " +
+                   "AND (:status IS NULL OR o.status = :status) " +
+                   "AND (:startDate IS NULL OR o.createdAt >= :startDate) " +
+                   "AND (:endDate IS NULL OR o.createdAt < :endDate)",
+           countQuery = "SELECT COUNT(o) FROM Order o WHERE o.restaurant.id = :restaurantId " +
+                   "AND (:status IS NULL OR o.status = :status) " +
+                   "AND (:startDate IS NULL OR o.createdAt >= :startDate) " +
+                   "AND (:endDate IS NULL OR o.createdAt < :endDate)")
+    Page<Order> findByRestaurantForOwner(
+            @Param("restaurantId") Long restaurantId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.restaurant.id = :restaurantId " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findRecentByRestaurant(@Param("restaurantId") Long restaurantId, Pageable pageable);
+
+    long countByRestaurantIdAndStatus(Long restaurantId, OrderStatus status);
+
+    long countByRestaurantIdAndCreatedAtAfter(Long restaurantId, LocalDateTime after);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.restaurant.id = :rid AND o.status = 'DELIVERED'")
+    java.math.BigDecimal sumDeliveredByRestaurant(@Param("rid") Long restaurantId);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.restaurant.id = :rid AND o.status = 'DELIVERED' AND o.createdAt >= :after")
+    java.math.BigDecimal sumDeliveredByRestaurantAfter(@Param("rid") Long restaurantId, @Param("after") LocalDateTime after);
+
+    // --- Shipper portal ---
+    @Query(value = "SELECT DISTINCT o FROM Order o JOIN FETCH o.user JOIN FETCH o.restaurant " +
+                   "WHERE o.deliveryAgent.id = :agentId",
+           countQuery = "SELECT COUNT(o) FROM Order o WHERE o.deliveryAgent.id = :agentId")
+    Page<Order> findByDeliveryAgentForShipper(
+            @Param("agentId") Long agentId, Pageable pageable);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.restaurant " +
+           "WHERE o.deliveryAgent.id = :agentId AND o.status IN ('PICKED_UP', 'ON_THE_WAY') " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findActiveForShipper(@Param("agentId") Long agentId);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.restaurant " +
+           "WHERE o.status = 'READY_FOR_PICKUP' AND o.deliveryAgent IS NULL " +
+           "ORDER BY o.createdAt ASC")
+    List<Order> findAvailableForPickup();
+
+    long countByDeliveryAgentIdAndStatus(Long agentId, OrderStatus status);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.restaurant LEFT JOIN FETCH o.items WHERE o.id = :id")
+    java.util.Optional<Order> findByIdWithDetails(@Param("id") Long id);
 }

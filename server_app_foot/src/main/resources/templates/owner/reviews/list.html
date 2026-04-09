@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout}">
+<head><title>Đánh giá — Owner Portal</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="mb-0 fw-bold">Đánh giá</h4>
+            <p class="text-muted mb-0" style="font-size:.85rem;">Đánh giá từ khách hàng về nhà hàng của bạn</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Khách hàng</th>
+                            <th>Đánh giá</th>
+                            <th>Nội dung</th>
+                            <th>Ngày</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${reviews.empty}">
+                            <td colspan="4" class="text-center text-muted py-4">Chưa có đánh giá nào</td>
+                        </tr>
+                        <tr th:each="rv : ${reviews}">
+                            <td>
+                                <div th:text="${rv.user.firstName + ' ' + rv.user.lastName}"
+                                     style="font-size:.9rem;" class="fw-semibold"></div>
+                                <div th:text="${rv.user.email}" class="text-muted"
+                                     style="font-size:.78rem;"></div>
+                            </td>
+                            <td>
+                                <th:block th:each="i : ${#numbers.sequence(1, 5)}">
+                                    <i th:class="${'bi ' + (i <= rv.rating ? 'bi-star-fill text-warning' : 'bi-star text-muted')}"
+                                       style="font-size:.85rem;"></i>
+                                </th:block>
+                                <span class="ms-1 fw-semibold" th:text="${rv.rating}"></span>
+                            </td>
+                            <td style="max-width:220px;">
+                                <span style="font-size:.85rem;"
+                                      th:text="${#strings.abbreviate(rv.comment ?: '', 90)}"></span>
+                            </td>
+                            <td class="text-muted" style="font-size:.82rem;"
+                                th:text="${#temporals.format(rv.createdAt, 'dd/MM/yyyy')}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pagination -->
+        <div class="card-footer bg-white border-0" th:if="${reviews.totalPages > 1}">
+            <nav>
+                <ul class="pagination pagination-sm mb-0 justify-content-end">
+                    <li th:class="${'page-item ' + (reviews.first ? 'disabled' : '')}">
+                        <a class="page-link"
+                           th:href="@{/owner/reviews(page=${reviews.number - 1})}">&laquo;</a>
+                    </li>
+                    <li th:each="i : ${#numbers.sequence(0, reviews.totalPages - 1)}"
+                        th:class="${'page-item ' + (i == reviews.number ? 'active' : '')}">
+                        <a class="page-link"
+                           th:href="@{/owner/reviews(page=${i})}"
+                           th:text="${i + 1}"></a>
+                    </li>
+                    <li th:class="${'page-item ' + (reviews.last ? 'disabled' : '')}">
+                        <a class="page-link"
+                           th:href="@{/owner/reviews(page=${reviews.number + 1})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
