@@ -122,12 +122,53 @@ public class OwnerService {
         orderRepository.save(order);
     }
 
-    // ---- Menu ----
+    // ---- Menu: Categories ----
 
     @Transactional(readOnly = true)
     public List<MenuCategory> getCategories(Long restaurantId) {
         return menuCategoryRepository.findByRestaurantIdAndActiveTrueOrderByDisplayOrderAsc(restaurantId);
     }
+
+    @Transactional(readOnly = true)
+    public Optional<MenuCategory> getCategoryById(Long categoryId, Long restaurantId) {
+        return menuCategoryRepository.findById(categoryId)
+                .filter(c -> c.getRestaurant().getId().equals(restaurantId));
+    }
+
+    public MenuCategory createCategory(Long restaurantId, String name, String description, int displayOrder) {
+        com.foodrush.restaurant.entity.Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        MenuCategory cat = MenuCategory.builder()
+                .restaurant(restaurant)
+                .name(name)
+                .description(description)
+                .displayOrder(displayOrder)
+                .active(true)
+                .build();
+        return menuCategoryRepository.save(cat);
+    }
+
+    public void updateCategory(Long categoryId, Long restaurantId, String name, String description, int displayOrder) {
+        menuCategoryRepository.findById(categoryId)
+                .filter(c -> c.getRestaurant().getId().equals(restaurantId))
+                .ifPresent(cat -> {
+                    cat.setName(name);
+                    cat.setDescription(description);
+                    cat.setDisplayOrder(displayOrder);
+                    menuCategoryRepository.save(cat);
+                });
+    }
+
+    public void deleteCategory(Long categoryId, Long restaurantId) {
+        menuCategoryRepository.findById(categoryId)
+                .filter(c -> c.getRestaurant().getId().equals(restaurantId))
+                .ifPresent(cat -> {
+                    cat.setActive(false);
+                    menuCategoryRepository.save(cat);
+                });
+    }
+
+    // ---- Menu: Items ----
 
     @Transactional(readOnly = true)
     public List<MenuItem> getItemsByCategory(Long categoryId) {
@@ -138,6 +179,58 @@ public class OwnerService {
     public Optional<MenuItem> getMenuItemById(Long itemId, Long restaurantId) {
         return menuItemRepository.findById(itemId)
                 .filter(i -> i.getRestaurant().getId().equals(restaurantId));
+    }
+
+    public void createMenuItem(Long restaurantId, Long categoryId, String name, String description,
+                               java.math.BigDecimal price, boolean featured, Integer calories,
+                               Integer prepTime, int displayOrder) {
+        com.foodrush.restaurant.entity.Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        MenuCategory category = menuCategoryRepository.findById(categoryId)
+                .filter(c -> c.getRestaurant().getId().equals(restaurantId))
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        MenuItem item = MenuItem.builder()
+                .restaurant(restaurant)
+                .category(category)
+                .name(name)
+                .description(description)
+                .price(price)
+                .available(true)
+                .featured(featured)
+                .calories(calories)
+                .preparationTimeMinutes(prepTime != null ? prepTime : 15)
+                .displayOrder(displayOrder)
+                .build();
+        menuItemRepository.save(item);
+    }
+
+    public void updateMenuItem(Long itemId, Long restaurantId, Long categoryId, String name,
+                               String description, java.math.BigDecimal price, boolean available,
+                               boolean featured, Integer calories, Integer prepTime, int displayOrder) {
+        menuItemRepository.findById(itemId)
+                .filter(i -> i.getRestaurant().getId().equals(restaurantId))
+                .ifPresent(item -> {
+                    if (categoryId != null) {
+                        menuCategoryRepository.findById(categoryId)
+                                .filter(c -> c.getRestaurant().getId().equals(restaurantId))
+                                .ifPresent(item::setCategory);
+                    }
+                    item.setName(name);
+                    item.setDescription(description);
+                    item.setPrice(price);
+                    item.setAvailable(available);
+                    item.setFeatured(featured);
+                    item.setCalories(calories);
+                    item.setPreparationTimeMinutes(prepTime != null ? prepTime : 15);
+                    item.setDisplayOrder(displayOrder);
+                    menuItemRepository.save(item);
+                });
+    }
+
+    public void deleteMenuItem(Long itemId, Long restaurantId) {
+        menuItemRepository.findById(itemId)
+                .filter(i -> i.getRestaurant().getId().equals(restaurantId))
+                .ifPresent(menuItemRepository::delete);
     }
 
     public void toggleItemAvailable(Long itemId, Long restaurantId) {

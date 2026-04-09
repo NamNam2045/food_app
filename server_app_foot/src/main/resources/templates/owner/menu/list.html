@@ -6,68 +6,354 @@
 <body>
 <div layout:fragment="content">
 
+    <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h4 class="mb-0 fw-bold">Thực đơn</h4>
-            <p class="text-muted mb-0" style="font-size:.85rem;">Quản lý món ăn theo từng danh mục</p>
+            <p class="text-muted mb-0" style="font-size:.85rem;">Quản lý danh mục và món ăn</p>
         </div>
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddCategory">
+            <i class="bi bi-plus-lg me-1"></i>Thêm danh mục
+        </button>
+    </div>
+
+    <!-- Flash -->
+    <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
     <div th:if="${categories.empty}" class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i> Chưa có danh mục thực đơn nào.
+        <i class="bi bi-info-circle me-2"></i>Chưa có danh mục nào. Hãy thêm danh mục đầu tiên!
     </div>
 
+    <!-- Category cards -->
     <div th:each="cat : ${categories}" class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
-        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center gap-2">
-            <h6 class="fw-bold mb-0" th:text="${cat.name}">Danh mục</h6>
-            <span class="badge bg-secondary" th:text="${itemMap[cat.id]?.size() ?: 0} + ' món'"></span>
+        <!-- Category header -->
+        <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-2 px-3"
+             style="border-radius:12px 12px 0 0;">
+            <h6 class="fw-bold mb-0 me-auto" th:text="${cat.name}"></h6>
+            <span class="badge bg-secondary"
+                  th:text="${itemMap[cat.id] != null ? itemMap[cat.id].size() : 0} + ' món'"></span>
+            <!-- Add item to category -->
+            <button class="btn btn-sm btn-outline-success"
+                    th:attr="data-cat-id=${cat.id}, data-cat-name=${cat.name}"
+                    onclick="openAddItem(this)">
+                <i class="bi bi-plus-lg me-1"></i>Thêm món
+            </button>
+            <!-- Edit category -->
+            <button class="btn btn-sm btn-outline-primary"
+                    th:attr="data-id=${cat.id}, data-name=${cat.name}, data-description=${cat.description}, data-order=${cat.displayOrder}"
+                    onclick="openEditCategory(this)">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <!-- Delete category -->
+            <form th:action="@{/owner/menu/categories/{id}/delete(id=${cat.id})}" method="post" class="d-inline"
+                  onsubmit="return confirm('Ẩn danh mục này? Các món trong đó sẽ không hiển thị.')">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
         </div>
+
+        <!-- Items table -->
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tên món</th>
-                            <th>Giá</th>
-                            <th class="text-center">Khả dụng</th>
-                            <th class="text-center">Nổi bật</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:if="${itemMap[cat.id] == null or itemMap[cat.id].empty}">
-                            <td colspan="5" class="text-center text-muted py-3">Chưa có món</td>
-                        </tr>
-                        <tr th:each="item : ${itemMap[cat.id]}">
-                            <td>
-                                <div class="fw-semibold" th:text="${item.name}"></div>
-                                <div class="text-muted" style="font-size:.78rem;"
-                                     th:text="${#strings.abbreviate(item.description ?: '', 60)}"></div>
-                            </td>
-                            <td class="fw-semibold text-success"
-                                th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
-                            <td class="text-center">
-                                <span th:class="${'badge ' + (item.available ? 'bg-success' : 'bg-danger')}"
-                                      th:text="${item.available ? 'Có' : 'Hết'}"></span>
-                            </td>
-                            <td class="text-center">
-                                <i th:class="${item.featured ? 'bi bi-star-fill text-warning' : 'bi bi-star text-muted'}"></i>
-                            </td>
-                            <td>
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tên món</th>
+                        <th>Giá</th>
+                        <th class="text-center">Thời gian</th>
+                        <th class="text-center">Khả dụng</th>
+                        <th class="text-center">Nổi bật</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${itemMap[cat.id] == null or itemMap[cat.id].empty}">
+                        <td colspan="6" class="text-center text-muted py-3">
+                            Chưa có món — <a href="#" th:attr="data-cat-id=${cat.id}, data-cat-name=${cat.name}"
+                                             onclick="openAddItem(this); return false;">Thêm ngay</a>
+                        </td>
+                    </tr>
+                    <tr th:each="item : ${itemMap[cat.id]}">
+                        <td>
+                            <div class="fw-semibold" th:text="${item.name}"></div>
+                            <div class="text-muted" style="font-size:.78rem;"
+                                 th:text="${#strings.abbreviate(item.description ?: '', 60)}"></div>
+                        </td>
+                        <td class="fw-semibold text-success"
+                            th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT') + 'đ'}"></td>
+                        <td class="text-center text-muted" style="font-size:.85rem;"
+                            th:text="${item.preparationTimeMinutes} + ' phút'"></td>
+                        <td class="text-center">
+                            <span th:class="${'badge ' + (item.available ? 'bg-success' : 'bg-danger')}"
+                                  th:text="${item.available ? 'Có' : 'Hết'}"></span>
+                        </td>
+                        <td class="text-center">
+                            <i th:class="${item.featured ? 'bi bi-star-fill text-warning' : 'bi bi-star text-muted'}"></i>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <!-- Toggle available -->
                                 <form th:action="@{/owner/menu/items/{id}/toggle(id=${item.id})}" method="post" class="d-inline">
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                     <button type="submit"
-                                            th:class="${'btn btn-sm ' + (item.available ? 'btn-outline-danger' : 'btn-outline-success')}"
-                                            th:text="${item.available ? 'Tạm ẩn' : 'Hiển thị'}">
+                                            th:class="${'btn btn-sm ' + (item.available ? 'btn-outline-warning' : 'btn-outline-success')}"
+                                            th:title="${item.available ? 'Tạm ẩn' : 'Hiển thị'}">
+                                        <i th:class="${item.available ? 'bi bi-eye-slash' : 'bi bi-eye'}"></i>
                                     </button>
                                 </form>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                <!-- Edit -->
+                                <button class="btn btn-sm btn-outline-primary"
+                                        th:attr="data-id=${item.id},
+                                                 data-cat-id=${cat.id},
+                                                 data-name=${item.name},
+                                                 data-description=${item.description},
+                                                 data-price=${item.price},
+                                                 data-available=${item.available},
+                                                 data-featured=${item.featured},
+                                                 data-calories=${item.calories},
+                                                 data-prep=${item.preparationTimeMinutes},
+                                                 data-order=${item.displayOrder}"
+                                        onclick="openEditItem(this)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <!-- Delete -->
+                                <form th:action="@{/owner/menu/items/{id}/delete(id=${item.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Xóa món này khỏi thực đơn?')">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         MODALS
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Modal: Add Category -->
+    <div class="modal fade" id="modalAddCategory" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/owner/menu/categories/create}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Thêm danh mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required maxlength="100" placeholder="VD: Món khai vị"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Mô tả ngắn về danh mục"></textarea>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                            <input type="number" name="displayOrder" class="form-control" value="0" min="0"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success">Thêm danh mục</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+
+    <!-- Modal: Edit Category -->
+    <div class="modal fade" id="modalEditCategory" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formEditCategory" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Chỉnh sửa danh mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
+                            <input type="text" id="editCatName" name="name" class="form-control" required maxlength="100"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea id="editCatDesc" name="description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                            <input type="number" id="editCatOrder" name="displayOrder" class="form-control" min="0"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Item -->
+    <div class="modal fade" id="modalAddItem" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form th:action="@{/owner/menu/items/create}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" id="addItemCatId" name="categoryId"/>
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Thêm món — <span id="addItemCatName" class="text-success"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Tên món <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" required maxlength="255" placeholder="VD: Phở bò đặc biệt"/>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả</label>
+                                <textarea name="description" class="form-control" rows="2" placeholder="Mô tả ngắn về món ăn"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Giá (đ) <span class="text-danger">*</span></label>
+                                <input type="number" name="price" class="form-control" required min="0" step="1000" placeholder="75000"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Thời gian chuẩn bị (phút)</label>
+                                <input type="number" name="preparationTimeMinutes" class="form-control" min="1" value="15"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Calories</label>
+                                <input type="number" name="calories" class="form-control" min="0" placeholder="Tùy chọn"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                <input type="number" name="displayOrder" class="form-control" value="0" min="0"/>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="featured" id="addFeatured" value="true"/>
+                                    <label class="form-check-label fw-semibold" for="addFeatured">Nổi bật ⭐</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success">Thêm món</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Item -->
+    <div class="modal fade" id="modalEditItem" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formEditItem" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" id="editItemCatId" name="categoryId"/>
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Chỉnh sửa món ăn</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Tên món <span class="text-danger">*</span></label>
+                                <input type="text" id="editItemName" name="name" class="form-control" required maxlength="255"/>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả</label>
+                                <textarea id="editItemDesc" name="description" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Giá (đ) <span class="text-danger">*</span></label>
+                                <input type="number" id="editItemPrice" name="price" class="form-control" required min="0" step="1000"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Thời gian chuẩn bị (phút)</label>
+                                <input type="number" id="editItemPrep" name="preparationTimeMinutes" class="form-control" min="1"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Calories</label>
+                                <input type="number" id="editItemCalories" name="calories" class="form-control" min="0"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                <input type="number" id="editItemOrder" name="displayOrder" class="form-control" min="0"/>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end gap-3 pb-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available" id="editAvailable" value="true"/>
+                                    <label class="form-check-label fw-semibold" for="editAvailable">Khả dụng</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="featured" id="editFeatured" value="true"/>
+                                    <label class="form-check-label fw-semibold" for="editFeatured">Nổi bật ⭐</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script th:inline="none">
+        function openEditCategory(btn) {
+            document.getElementById('editCatName').value  = btn.dataset.name || '';
+            document.getElementById('editCatDesc').value  = btn.dataset.description || '';
+            document.getElementById('editCatOrder').value = btn.dataset.order || 0;
+            document.getElementById('formEditCategory').action =
+                '/owner/menu/categories/' + btn.dataset.id + '/update';
+            new bootstrap.Modal(document.getElementById('modalEditCategory')).show();
+        }
+
+        function openAddItem(btn) {
+            document.getElementById('addItemCatId').value   = btn.dataset.catId;
+            document.getElementById('addItemCatName').textContent = btn.dataset.catName;
+            new bootstrap.Modal(document.getElementById('modalAddItem')).show();
+        }
+
+        function openEditItem(btn) {
+            document.getElementById('editItemCatId').value      = btn.dataset.catId;
+            document.getElementById('editItemName').value        = btn.dataset.name || '';
+            document.getElementById('editItemDesc').value        = btn.dataset.description || '';
+            document.getElementById('editItemPrice').value       = btn.dataset.price || '';
+            document.getElementById('editItemPrep').value        = btn.dataset.prep || 15;
+            document.getElementById('editItemCalories').value    = btn.dataset.calories || '';
+            document.getElementById('editItemOrder').value       = btn.dataset.order || 0;
+            document.getElementById('editAvailable').checked     = btn.dataset.available === 'true';
+            document.getElementById('editFeatured').checked      = btn.dataset.featured === 'true';
+            document.getElementById('formEditItem').action =
+                '/owner/menu/items/' + btn.dataset.id + '/update';
+            new bootstrap.Modal(document.getElementById('modalEditItem')).show();
+        }
+    </script>
 
 </div>
 </body>
