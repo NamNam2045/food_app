@@ -3,8 +3,8 @@ package com.foodrush.notification.service;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import com.foodrush.common.enums.OrderStatus;
 import com.foodrush.notification.dto.PushNotificationRequest;
-import com.foodrush.order.entity.Order;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -42,18 +42,19 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Async
-    public void sendOrderStatusUpdate(Order order) {
-        String userFcmToken = order.getUser().getFcmToken();
-        if (!StringUtils.hasText(userFcmToken)) return;
+    public void sendOrderStatusUpdate(Long orderId, String orderNumber, OrderStatus orderStatus, String fcmToken) {
+        if (!StringUtils.hasText(fcmToken)) {
+            return;
+        }
 
-        String statusMessage = getStatusMessage(order.getStatus().name());
+        String statusMessage = getStatusMessage(orderStatus.name());
 
         PushNotificationRequest pushRequest = PushNotificationRequest.builder()
-                .fcmToken(userFcmToken)
-                .title("Đơn hàng " + order.getOrderNumber())
+                .fcmToken(fcmToken)
+                .title("Đơn hàng " + orderNumber)
                 .body(statusMessage)
-                .orderId(order.getId().toString())
-                .orderStatus(order.getStatus().name())
+                .orderId(orderId != null ? orderId.toString() : "")
+                .orderStatus(orderStatus.name())
                 .build();
 
         sendPushNotification(pushRequest);

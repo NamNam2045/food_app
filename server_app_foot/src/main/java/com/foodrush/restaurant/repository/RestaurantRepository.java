@@ -18,9 +18,9 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     boolean existsBySlug(String slug);
 
     @Query("SELECT r FROM Restaurant r WHERE r.active = true " +
-           "AND (:city IS NULL OR LOWER(r.city) = LOWER(:city)) " +
-           "AND (:cuisineType IS NULL OR LOWER(r.cuisineType) = LOWER(:cuisineType)) " +
-           "AND (:search IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND LOWER(r.city) = LOWER(COALESCE(:city, r.city)) " +
+           "AND LOWER(r.cuisineType) = LOWER(COALESCE(:cuisineType, r.cuisineType)) " +
+           "AND LOWER(r.name) LIKE LOWER(CONCAT('%', COALESCE(:search, ''), '%')) " +
            "AND (:isOpen IS NULL OR r.open = :isOpen)")
     Page<Restaurant> findWithFilters(
             @Param("city") String city,

@@ -253,8 +253,14 @@ public class OrderServiceImpl implements OrderService {
                 msg
         );
 
-        // FCM push notification (async)
-        notificationService.sendOrderStatusUpdate(order);
+        // FCM push notification (async) using plain values to avoid lazy-loading
+        // managed entities across threads.
+        notificationService.sendOrderStatusUpdate(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getStatus(),
+                order.getUser().getFcmToken()
+        );
     }
 
     private String getStatusMessage(OrderStatus status) {
