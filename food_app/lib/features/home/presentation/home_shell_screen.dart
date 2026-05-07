@@ -9,8 +9,8 @@ import '../../order/data/order_repository.dart';
 import '../../order/presentation/screens/order_history_screen.dart';
 import '../../profile/data/user_repository.dart';
 import '../../profile/presentation/screens/profile_screen.dart';
-import '../../restaurant/presentation/screens/restaurant_list_screen.dart';
 import '../../review/data/review_repository.dart';
+import '../../search/presentation/screens/search_screen.dart';
 
 class HomeShellScreen extends StatefulWidget {
   const HomeShellScreen({super.key, this.initialIndex = 0});
@@ -44,10 +44,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             DiscoverCubit(repository: restaurantRepo)..loadRestaurants(),
         child: const DiscoverScreen(),
       ),
-      RestaurantListScreen(
-        repository: restaurantRepo,
-        title: 'Tìm kiếm nhà hàng',
-      ),
+      SearchScreen(repository: restaurantRepo),
       OrderHistoryScreen(
         orderRepository: orderRepo,
         reviewRepository: reviewRepo,

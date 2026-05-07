@@ -247,11 +247,21 @@ public class OrderServiceImpl implements OrderService {
                 .estimatedDeliveryAt(order.getEstimatedDeliveryAt())
                 .timestamp(LocalDateTime.now()).build();
 
+        final String destination = "/queue/orders/" + order.getId() + "/status";
+        final String userIdKey = order.getUser().getId().toString();
         messagingTemplate.convertAndSendToUser(
-                order.getUser().getId().toString(),
-                "/queue/orders/" + order.getId() + "/status",
+                userIdKey,
+                destination,
                 msg
         );
+        final String userEmailKey = order.getUser().getEmail();
+        if (userEmailKey != null && !userEmailKey.isBlank() && !userEmailKey.equals(userIdKey)) {
+            messagingTemplate.convertAndSendToUser(
+                    userEmailKey,
+                    destination,
+                    msg
+            );
+        }
 
         // FCM push notification (async) using plain values to avoid lazy-loading
         // managed entities across threads.

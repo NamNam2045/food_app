@@ -112,15 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               leading: const Icon(Icons.credit_card_outlined),
               title: const Text('Phương thức thanh toán'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Màn phương thức thanh toán sẽ cập nhật ở bước sau.',
-                    ),
-                  ),
-                );
-              },
+              onTap: () => context.push('/profile/payment-methods'),
             ),
             ListTile(
               leading: const Icon(Icons.notifications_none),
@@ -132,17 +124,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListTile(
               leading: const Icon(Icons.help_outline),
               title: const Text('Trợ giúp & FAQ'),
-              onTap: () {},
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/support/faq'),
             ),
             ListTile(
               leading: const Icon(Icons.description_outlined),
               title: const Text('Điều khoản sử dụng'),
-              onTap: () {},
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/support/terms'),
             ),
             ListTile(
               leading: const Icon(Icons.shield_outlined),
               title: const Text('Chính sách bảo mật'),
-              onTap: () {},
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/support/privacy'),
             ),
             const SizedBox(height: 14),
             Padding(

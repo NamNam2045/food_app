@@ -11,4 +11,10 @@ class AppConstants {
   static const String refreshTokenKey = 'refresh_token';
   static const String accessTokenExpiryKey = 'access_token_expiry_epoch';
   static const String userRoleKey = 'user_role';
+
+  static String get webSocketUrl {
+    final uri = Uri.parse(apiBaseUrl);
+    final port = uri.hasPort ? ':${uri.port}' : '';
+    return '${uri.scheme}://${uri.host}$port/ws';
+  }
 }

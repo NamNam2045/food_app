@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:stomp_dart_client/stomp_dart_client.dart';
 
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../data/models/order_models.dart';
 import '../../data/order_repository.dart';
@@ -21,10 +24,14 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  final TokenStorage _tokenStorage = TokenStorage();
+
   bool _loading = true;
   String? _error;
   OrderDetailModel? _order;
   Timer? _timer;
+  StompClient? _stompClient;
+  bool _socketConnected = false;
 
   static const orderFlow = <String>[
     'PENDING',
@@ -38,6 +45,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void initState() {
     super.initState();
     _load();
+    _connectRealtimeChannel();
     _timer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => _load(silent: true),
@@ -47,7 +55,58 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _stompClient?.deactivate();
     super.dispose();
+  }
+
+  Future<void> _connectRealtimeChannel() async {
+    final token = await _tokenStorage.readAccessToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
+    late final StompClient client;
+    client = StompClient(
+      config: StompConfig.sockJS(
+        url: AppConstants.webSocketUrl,
+        reconnectDelay: const Duration(seconds: 5),
+        heartbeatIncoming: const Duration(seconds: 10),
+        heartbeatOutgoing: const Duration(seconds: 10),
+        stompConnectHeaders: {'Authorization': 'Bearer $token'},
+        webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
+        onConnect: (_) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _socketConnected = true);
+          client.subscribe(
+            destination: '/user/queue/orders/${widget.orderId}/status',
+            callback: (_) => _load(silent: true),
+          );
+        },
+        onStompError: (_) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _socketConnected = false);
+        },
+        onWebSocketError: (_) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _socketConnected = false);
+        },
+        onWebSocketDone: () {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _socketConnected = false);
+        },
+      ),
+    );
+
+    _stompClient = client;
+    client.activate();
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -115,6 +174,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               Text(
                 'Dự kiến: ${Formatters.dateTime(order.estimatedDeliveryAt)}',
               ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  _socketConnected ? Icons.wifi_tethering : Icons.wifi_off,
+                  size: 16,
+                  color: _socketConnected ? Colors.green : Colors.orange,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _socketConnected
+                      ? 'Realtime: Đang kết nối'
+                      : 'Realtime: Mất kết nối (đang dùng polling)',
+                  style: TextStyle(
+                    color: _socketConnected ? Colors.green : Colors.orange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
             ...orderFlow.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -134,16 +213,96 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             }),
             const SizedBox(height: 8),
             Card(
-              color: Colors.grey.shade100,
-              child: const SizedBox(
-                height: 180,
-                child: Center(child: Text('Map view placeholder')),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                height: 190,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFFF1EB), Color(0xFFEAF4FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${order.restaurantName} → Địa chỉ của bạn',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: const [
+                          Icon(Icons.store_mall_directory_outlined),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Divider(thickness: 2),
+                            ),
+                          ),
+                          Icon(Icons.delivery_dining),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Divider(thickness: 2),
+                            ),
+                          ),
+                          Icon(Icons.home_outlined),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 18),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Bản đồ realtime sẽ tích hợp sau. Hiện tại đang hiển thị tuyến giao ước tính.',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 8),
             if ((order.restaurantPhone ?? '').isNotEmpty)
               OutlinedButton.icon(
-                onPressed: null,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Số nhà hàng: ${order.restaurantPhone}. Tính năng gọi trực tiếp sẽ tích hợp sau.',
+                      ),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.phone),
                 label: Text('Liên hệ nhà hàng: ${order.restaurantPhone}'),
               ),

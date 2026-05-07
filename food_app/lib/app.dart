@@ -32,13 +32,18 @@ import 'features/profile/data/models/address_model.dart';
 import 'features/profile/data/user_repository.dart';
 import 'features/profile/presentation/screens/add_address_screen.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/profile/presentation/screens/help_faq_screen.dart';
+import 'features/profile/presentation/screens/payment_methods_screen.dart';
+import 'features/profile/presentation/screens/privacy_policy_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/profile/presentation/screens/saved_addresses_screen.dart';
+import 'features/profile/presentation/screens/terms_of_use_screen.dart';
 import 'features/restaurant/logic/restaurant_detail_cubit.dart';
 import 'features/restaurant/presentation/restaurant_detail_screen.dart';
 import 'features/restaurant/presentation/screens/item_detail_screen.dart';
 import 'features/restaurant/presentation/screens/restaurant_list_screen.dart';
 import 'features/review/data/review_repository.dart';
+import 'features/search/presentation/screens/search_screen.dart';
 
 class FoodRushApp extends StatefulWidget {
   const FoodRushApp({super.key});
@@ -160,6 +165,14 @@ class _FoodRushAppState extends State<FoodRushApp> {
           ),
         ),
         GoRoute(
+          path: '/search',
+          builder: (_, state) => SearchScreen(
+            repository: _restaurantRepository,
+            initialQuery: state.uri.queryParameters['q'],
+            showAppBar: true,
+          ),
+        ),
+        GoRoute(
           path: '/restaurants/:id',
           builder: (context, state) {
             final id = state.pathParameters['id']!;
@@ -264,8 +277,25 @@ class _FoodRushAppState extends State<FoodRushApp> {
           ),
         ),
         GoRoute(
+          path: '/profile/payment-methods',
+          builder: (_, __) => const PaymentMethodsScreen(),
+        ),
+        GoRoute(
+          path: '/support/faq',
+          builder: (_, __) => const HelpFaqScreen(),
+        ),
+        GoRoute(
+          path: '/support/terms',
+          builder: (_, __) => const TermsOfUseScreen(),
+        ),
+        GoRoute(
+          path: '/support/privacy',
+          builder: (_, __) => const PrivacyPolicyScreen(),
+        ),
+        GoRoute(
           path: '/notifications',
-          builder: (_, __) => const NotificationsScreen(),
+          builder: (_, __) =>
+              NotificationsScreen(orderRepository: _orderRepository),
         ),
         GoRoute(
           path: '/admin',
