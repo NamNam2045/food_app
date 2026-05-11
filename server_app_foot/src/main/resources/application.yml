@@ -2,6 +2,11 @@ spring:
   application:
     name: foodrush-backend
 
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 8MB
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:foodrush}
     username: ${DB_USERNAME:postgres}
@@ -67,6 +72,7 @@ jwt:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  upload-dir: ${APP_UPLOAD_DIR:./uploads}
 
 firebase:
   enabled: ${FIREBASE_ENABLED:false}

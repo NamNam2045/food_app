@@ -155,7 +155,7 @@ public class SecurityConfig {
     @Order(5)
     public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/favicon.ico", "/error", "/static/**", "/css/**", "/js/**", "/images/**")
+                .securityMatcher("/favicon.ico", "/error", "/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();

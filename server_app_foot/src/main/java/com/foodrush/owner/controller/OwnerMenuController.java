@@ -1,12 +1,14 @@
 package com.foodrush.owner.controller;
 
 import com.foodrush.auth.security.UserPrincipal;
+import com.foodrush.common.service.ImageStorageService;
 import com.foodrush.owner.service.OwnerService;
 import com.foodrush.restaurant.entity.Restaurant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
 public class OwnerMenuController {
 
     private final OwnerService ownerService;
+    private final ImageStorageService imageStorageService;
 
     private Restaurant getRestaurantOrThrow(Long ownerId) {
         return ownerService.getRestaurantByOwner(ownerId)
@@ -85,13 +88,24 @@ public class OwnerMenuController {
                              @RequestParam String name,
                              @RequestParam(required = false) String description,
                              @RequestParam BigDecimal price,
+                             @RequestParam(required = false) MultipartFile imageFile,
                              @RequestParam(defaultValue = "false") boolean featured,
                              @RequestParam(required = false) Integer calories,
                              @RequestParam(required = false) Integer preparationTimeMinutes,
                              @RequestParam(defaultValue = "0") int displayOrder,
                              RedirectAttributes ra) {
         Restaurant restaurant = getRestaurantOrThrow(principal.getId());
-        ownerService.createMenuItem(restaurant.getId(), categoryId, name, description, price,
+        String imageUrl = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                imageUrl = imageStorageService.storeImage(imageFile, "menu-items");
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                ra.addFlashAttribute("errorMsg", ex.getMessage());
+                return "redirect:/owner/menu";
+            }
+        }
+
+        ownerService.createMenuItem(restaurant.getId(), categoryId, name, description, price, imageUrl,
                 featured, calories, preparationTimeMinutes, displayOrder);
         ra.addFlashAttribute("successMsg", "Đã thêm món \"" + name + "\"");
         return "redirect:/owner/menu";
@@ -104,6 +118,8 @@ public class OwnerMenuController {
                              @RequestParam String name,
                              @RequestParam(required = false) String description,
                              @RequestParam BigDecimal price,
+                             @RequestParam(required = false) MultipartFile imageFile,
+                             @RequestParam(defaultValue = "false") boolean removeImage,
                              @RequestParam(defaultValue = "false") boolean available,
                              @RequestParam(defaultValue = "false") boolean featured,
                              @RequestParam(required = false) Integer calories,
@@ -111,8 +127,27 @@ public class OwnerMenuController {
                              @RequestParam(defaultValue = "0") int displayOrder,
                              RedirectAttributes ra) {
         Restaurant restaurant = getRestaurantOrThrow(principal.getId());
+        var currentItemOpt = ownerService.getMenuItemById(itemId, restaurant.getId());
+        if (currentItemOpt.isEmpty()) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy món ăn để cập nhật.");
+            return "redirect:/owner/menu";
+        }
+
+        String imageUrl = currentItemOpt.get().getImageUrl();
+        if (removeImage) {
+            imageUrl = null;
+        }
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                imageUrl = imageStorageService.storeImage(imageFile, "menu-items");
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                ra.addFlashAttribute("errorMsg", ex.getMessage());
+                return "redirect:/owner/menu";
+            }
+        }
+
         ownerService.updateMenuItem(itemId, restaurant.getId(), categoryId, name, description,
-                price, available, featured, calories, preparationTimeMinutes, displayOrder);
+                price, imageUrl, available, featured, calories, preparationTimeMinutes, displayOrder);
         ra.addFlashAttribute("successMsg", "Đã cập nhật món \"" + name + "\"");
         return "redirect:/owner/menu";
     }

@@ -182,7 +182,7 @@ public class OwnerService {
     }
 
     public void createMenuItem(Long restaurantId, Long categoryId, String name, String description,
-                               java.math.BigDecimal price, boolean featured, Integer calories,
+                               java.math.BigDecimal price, String imageUrl, boolean featured, Integer calories,
                                Integer prepTime, int displayOrder) {
         com.foodrush.restaurant.entity.Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new RuntimeException("Restaurant not found"));
@@ -195,6 +195,7 @@ public class OwnerService {
                 .name(name)
                 .description(description)
                 .price(price)
+                .imageUrl(imageUrl)
                 .available(true)
                 .featured(featured)
                 .calories(calories)
@@ -205,7 +206,7 @@ public class OwnerService {
     }
 
     public void updateMenuItem(Long itemId, Long restaurantId, Long categoryId, String name,
-                               String description, java.math.BigDecimal price, boolean available,
+                               String description, java.math.BigDecimal price, String imageUrl, boolean available,
                                boolean featured, Integer calories, Integer prepTime, int displayOrder) {
         menuItemRepository.findById(itemId)
                 .filter(i -> i.getRestaurant().getId().equals(restaurantId))
@@ -218,6 +219,7 @@ public class OwnerService {
                     item.setName(name);
                     item.setDescription(description);
                     item.setPrice(price);
+                    item.setImageUrl(imageUrl);
                     item.setAvailable(available);
                     item.setFeatured(featured);
                     item.setCalories(calories);

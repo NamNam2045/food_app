@@ -99,6 +99,13 @@ public class AdminService {
         return userRepository.save(user);
     }
 
+    public User updateUserAvatar(Long userId, String avatarUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setProfilePictureUrl(avatarUrl);
+        return userRepository.save(user);
+    }
+
     // ---- Restaurants ----
     @Transactional(readOnly = true)
     public Page<Restaurant> getRestaurants(String search, int page, int size) {
