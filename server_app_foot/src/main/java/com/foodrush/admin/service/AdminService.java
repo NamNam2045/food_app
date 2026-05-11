@@ -218,10 +218,19 @@ public class AdminService {
         return menuItemRepository.findByCategoryIdOrderByDisplayOrderAsc(categoryId);
     }
 
-    public void toggleMenuItemAvailable(Long itemId) {
-        menuItemRepository.findById(itemId).ifPresent(item -> {
-            item.setAvailable(!item.isAvailable());
-            menuItemRepository.save(item);
-        });
+    public void toggleMenuItemAvailable(Long itemId, Long restaurantId) {
+        MenuItem item = menuItemRepository.findById(itemId)
+                .filter(i -> i.getRestaurant().getId().equals(restaurantId))
+                .orElseThrow(() -> new RuntimeException("Menu item not found"));
+        item.setAvailable(!item.isAvailable());
+        menuItemRepository.save(item);
+    }
+
+    public void updateMenuItemImage(Long itemId, Long restaurantId, String imageUrl) {
+        MenuItem item = menuItemRepository.findById(itemId)
+                .filter(i -> i.getRestaurant().getId().equals(restaurantId))
+                .orElseThrow(() -> new RuntimeException("Menu item not found"));
+        item.setImageUrl(imageUrl);
+        menuItemRepository.save(item);
     }
 }
