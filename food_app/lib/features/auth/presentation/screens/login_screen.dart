@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../logic/auth_cubit.dart';
 import '../../logic/auth_state.dart';
 
@@ -33,10 +35,21 @@ class _LoginScreenState extends State<LoginScreen> {
           previous.errorMessage != current.errorMessage,
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
+          if (kDebugMode) {
+            debugPrint('[LOGIN_UI] login success -> go /home');
+          }
           context.go('/home');
           return;
         }
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+          if (kDebugMode) {
+            final email = _emailController.text.trim();
+            debugPrint(
+              '[LOGIN_UI] show error="${state.errorMessage}" '
+              'status=${state.status} submitting=${state.isSubmitting} '
+              'email=$email apiBaseUrl=${AppConstants.apiBaseUrl}',
+            );
+          }
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(SnackBar(content: Text(state.errorMessage!)));
@@ -124,7 +137,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: state.isSubmitting
                           ? null
                           : () {
-                              if (!_formKey.currentState!.validate()) return;
+                              if (!_formKey.currentState!.validate()) {
+                                if (kDebugMode) {
+                                  debugPrint(
+                                    '[LOGIN_UI] submit blocked: form invalid',
+                                  );
+                                }
+                                return;
+                              }
+                              if (kDebugMode) {
+                                debugPrint(
+                                  '[LOGIN_UI] submit login email=${_emailController.text.trim()}',
+                                );
+                              }
                               context.read<AuthCubit>().login(
                                 email: _emailController.text.trim(),
                                 password: _passwordController.text,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/network/api_exception.dart';
@@ -23,6 +24,7 @@ class AuthCubit extends Cubit<AuthState> {
     final role = await _tokenStorage.readUserRole();
 
     if (!onboardingSeen) {
+      _log('bootstrap -> unauthenticated (onboarding not seen)');
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
@@ -34,6 +36,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     if (hasValidToken) {
+      _log('bootstrap -> authenticated (valid token, role=$role)');
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
@@ -46,6 +49,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     await _tokenStorage.clearTokens();
+    _log('bootstrap -> unauthenticated (token missing/expired)');
     emit(
       state.copyWith(
         status: AuthStatus.unauthenticated,
@@ -67,6 +71,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> login({required String email, required String password}) async {
+    _log('login start: email=$email');
     emit(state.copyWith(isSubmitting: true, clearError: true));
     try {
       final session = await _authRepository.login(
@@ -74,6 +79,7 @@ class AuthCubit extends Cubit<AuthState> {
         password: password,
       );
       await _persistSession(session);
+      _log('login success: role=${session.role}');
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
@@ -86,8 +92,10 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     } on ApiException catch (e) {
+      _log('login api error: ${e.message} (${e.errorCode})');
       emit(state.copyWith(isSubmitting: false, errorMessage: e.message));
     } catch (_) {
+      _log('login unknown error');
       emit(
         state.copyWith(
           isSubmitting: false,
@@ -104,6 +112,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String phoneNumber,
     required String password,
   }) async {
+    _log('register start: email=$email');
     emit(state.copyWith(isSubmitting: true, clearError: true));
     try {
       final session = await _authRepository.register(
@@ -114,6 +123,7 @@ class AuthCubit extends Cubit<AuthState> {
         password: password,
       );
       await _persistSession(session);
+      _log('register success: role=${session.role}');
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
@@ -126,8 +136,10 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     } on ApiException catch (e) {
+      _log('register api error: ${e.message} (${e.errorCode})');
       emit(state.copyWith(isSubmitting: false, errorMessage: e.message));
     } catch (_) {
+      _log('register unknown error');
       emit(
         state.copyWith(isSubmitting: false, errorMessage: 'Không thể đăng ký'),
       );
@@ -135,9 +147,11 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    _log('logout start');
     emit(state.copyWith(isSubmitting: true, clearError: true));
     await _authRepository.logout();
     await _tokenStorage.clearTokens();
+    _log('logout success');
     emit(
       state.copyWith(
         status: AuthStatus.unauthenticated,
@@ -162,5 +176,11 @@ class AuthCubit extends Cubit<AuthState> {
       accessTokenExpiresIn: session.accessTokenExpiresIn,
       userRole: session.role,
     );
+  }
+
+  void _log(String message) {
+    if (kDebugMode) {
+      debugPrint('[AUTH] $message');
+    }
   }
 }

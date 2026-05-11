@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
 import '../storage/token_storage.dart';
@@ -18,6 +21,9 @@ class ApiClient {
               headers: const {'Content-Type': 'application/json'},
             ),
           ) {
+    if (kDebugMode) {
+      debugPrint('[API] Base URL: ${_dio.options.baseUrl}');
+    }
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -25,9 +31,15 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          _logRequest(options);
           handler.next(options);
         },
+        onResponse: (response, handler) {
+          _logResponse(response);
+          handler.next(response);
+        },
         onError: (error, handler) {
+          _logError(error);
           if (error.error is ApiException) {
             handler.next(error);
             return;
@@ -61,6 +73,57 @@ class ApiClient {
 
   final Dio _dio;
   final TokenStorage _tokenStorage;
+
+  void _logRequest(RequestOptions options) {
+    if (!kDebugMode) {
+      return;
+    }
+    final headers = Map<String, dynamic>.from(options.headers);
+    if (headers.containsKey('Authorization')) {
+      headers['Authorization'] = 'Bearer ***';
+    }
+    debugPrint(
+      '[API][REQ] ${options.method} ${options.uri}\n'
+      'query=${options.queryParameters}\n'
+      'headers=$headers\n'
+      'body=${_safeEncode(options.data)}',
+    );
+  }
+
+  void _logResponse(Response<dynamic> response) {
+    if (!kDebugMode) {
+      return;
+    }
+    debugPrint(
+      '[API][RES] ${response.requestOptions.method} ${response.requestOptions.uri}\n'
+      'status=${response.statusCode}\n'
+      'data=${_safeEncode(response.data)}',
+    );
+  }
+
+  void _logError(DioException error) {
+    if (!kDebugMode) {
+      return;
+    }
+    debugPrint(
+      '[API][ERR] ${error.requestOptions.method} ${error.requestOptions.uri}\n'
+      'type=${error.type}\n'
+      'status=${error.response?.statusCode}\n'
+      'message=${error.message}\n'
+      'data=${_safeEncode(error.response?.data)}',
+    );
+  }
+
+  String _safeEncode(dynamic value) {
+    if (value == null) {
+      return 'null';
+    }
+    try {
+      return jsonEncode(value);
+    } catch (_) {
+      return value.toString();
+    }
+  }
 
   Future<dynamic> get(
     String path, {
