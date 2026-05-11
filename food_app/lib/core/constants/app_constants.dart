@@ -1,10 +1,25 @@
+import 'package:flutter/foundation.dart';
+
 class AppConstants {
   const AppConstants._();
 
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8080/api/v1',
-  );
+  static String get apiBaseUrl {
+    const fromEnv = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (fromEnv.isNotEmpty) {
+      return fromEnv;
+    }
+
+    if (kIsWeb) {
+      return 'http://localhost:8080/api/v1';
+    }
+
+    // Android emulator cannot access host via localhost.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8080/api/v1';
+    }
+
+    return 'http://localhost:8080/api/v1';
+  }
 
   static const String onboardingSeenKey = 'onboarding_seen';
   static const String accessTokenKey = 'access_token';
