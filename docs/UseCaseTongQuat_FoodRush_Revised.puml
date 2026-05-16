@@ -1,0 +1,74 @@
+@startuml UseCaseTongQuat_FoodRush
+title Biểu đồ Use Case tổng quát — App đặt đồ ăn và quản lý
+
+left to right direction
+
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #FFF6E5
+  BorderColor #E85B2E
+  ArrowColor #555555
+}
+skinparam actor {
+  BackgroundColor #EAF4FF
+  BorderColor #2E5BE8
+}
+
+actor "Khách hàng" as Customer
+actor "Người quản lý" as Manager
+
+rectangle "Hệ thống đặt đồ ăn" {
+
+  package "App đặt đồ ăn" {
+    usecase "Đăng ký / Đăng nhập" as UC_LOGIN
+    usecase "Tìm kiếm nhà hàng / món ăn" as UC_SEARCH
+    usecase "Xem menu" as UC_MENU
+    usecase "Quản lý giỏ hàng" as UC_CART
+    usecase "Đặt hàng" as UC_ORDER
+    usecase "Thanh toán" as UC_PAYMENT
+    usecase "Theo dõi đơn hàng" as UC_TRACK
+    usecase "Đánh giá đơn hàng" as UC_REVIEW
+  }
+
+  package "Quản lý hệ thống" {
+    usecase "Quản lý người dùng" as UC_MANAGE_USER
+    usecase "Quản lý nhà hàng" as UC_MANAGE_RESTAURANT
+    usecase "Quản lý menu / món ăn" as UC_MANAGE_MENU
+    usecase "Quản lý đơn hàng" as UC_MANAGE_ORDER
+    usecase "Quản lý đánh giá" as UC_MANAGE_REVIEW
+    usecase "Quản lý khuyến mãi" as UC_MANAGE_PROMO
+    usecase "Xem thống kê / báo cáo" as UC_REPORT
+  }
+}
+
+Customer --> UC_LOGIN
+Customer --> UC_SEARCH
+Customer --> UC_MENU
+Customer --> UC_CART
+Customer --> UC_ORDER
+Customer --> UC_PAYMENT
+Customer --> UC_TRACK
+Customer --> UC_REVIEW
+
+Manager --> UC_MANAGE_USER
+Manager --> UC_MANAGE_RESTAURANT
+Manager --> UC_MANAGE_MENU
+Manager --> UC_MANAGE_ORDER
+Manager --> UC_MANAGE_REVIEW
+Manager --> UC_MANAGE_PROMO
+Manager --> UC_REPORT
+
+UC_ORDER ..> UC_LOGIN : <<include>>
+UC_ORDER ..> UC_CART : <<include>>
+UC_ORDER ..> UC_PAYMENT : <<include>>
+UC_TRACK ..> UC_ORDER : <<extend>>
+UC_REVIEW ..> UC_ORDER : <<extend>>
+
+UC_MANAGE_MENU ..> UC_MANAGE_RESTAURANT : <<include>>
+UC_MANAGE_ORDER ..> UC_TRACK : <<supports>>
+UC_MANAGE_PROMO ..> UC_ORDER : <<supports>>
+
+@enduml

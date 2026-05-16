@@ -1,6 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "Read(//tmp/**)",
+      "Bash(cp \"/mnt/c/Users/PhanNgocMinh/Downloads/Flutter_Game_Sudoku.docx\" ./template.docx)",
+      "Bash(unzip -o template.docx -d template_extracted)",
+      "Bash(python3 -c \"import docx\")",
+      "Bash(pip install *)",
+      "Bash(cp \"/mnt/c/Users/PhanNgocMinh/Downloads/Flutter_Game_Sudoku.docx\" /tmp/template.docx)",
+      "Bash(python3 -c ' *)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "agentica"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
