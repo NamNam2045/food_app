@@ -132,6 +132,22 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
+    public RestaurantResponse updateLogo(Long id, String logoUrl, Long actorId, boolean systemAdmin) {
+        Restaurant restaurant = findById(id);
+        ensureCanManageRestaurant(restaurant, actorId, systemAdmin);
+        restaurant.setLogoUrl(logoUrl);
+        return toFullResponse(restaurantRepository.save(restaurant));
+    }
+
+    @Override
+    public RestaurantResponse updateBanner(Long id, String bannerUrl, Long actorId, boolean systemAdmin) {
+        Restaurant restaurant = findById(id);
+        ensureCanManageRestaurant(restaurant, actorId, systemAdmin);
+        restaurant.setBannerUrl(bannerUrl);
+        return toFullResponse(restaurantRepository.save(restaurant));
+    }
+
+    @Override
     public void delete(Long id) {
         Restaurant restaurant = findById(id);
         restaurant.setActive(false);
@@ -141,6 +157,15 @@ public class RestaurantServiceImpl implements RestaurantService {
     private Restaurant findById(Long id) {
         return restaurantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Nhà hàng không tồn tại"));
+    }
+
+    private void ensureCanManageRestaurant(Restaurant restaurant, Long actorId, boolean systemAdmin) {
+        if (systemAdmin) {
+            return;
+        }
+        if (!restaurant.getOwner().getId().equals(actorId)) {
+            throw new BusinessRuleException("FORBIDDEN", "Bạn không có quyền chỉnh sửa nhà hàng này");
+        }
     }
 
     private void saveOperatingHours(Restaurant restaurant, List<OperatingHoursRequest> hours) {

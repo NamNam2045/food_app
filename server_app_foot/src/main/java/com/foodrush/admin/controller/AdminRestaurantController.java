@@ -1,9 +1,11 @@
 package com.foodrush.admin.controller;
 
 import com.foodrush.admin.service.AdminService;
+import com.foodrush.common.service.ImageStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -13,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AdminRestaurantController {
 
     private final AdminService adminService;
+    private final ImageStorageService imageStorageService;
 
     @GetMapping
     public String list(@RequestParam(required = false) String search,
@@ -49,5 +52,67 @@ public class AdminRestaurantController {
         ra.addFlashAttribute("successMsg",
                 "Đã " + (r.isActive() ? "kích hoạt" : "vô hiệu hóa") + " nhà hàng: " + r.getName());
         return "redirect:/admin/restaurants";
+    }
+
+    @PostMapping("/{id}/logo")
+    public String uploadLogo(@PathVariable Long id,
+                             @RequestParam(required = false) MultipartFile imageFile,
+                             RedirectAttributes ra) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            ra.addFlashAttribute("errorMsg", "Vui lòng chọn ảnh logo.");
+            return "redirect:/admin/restaurants/" + id;
+        }
+        try {
+            String imageUrl = imageStorageService.storeImage(imageFile, "restaurant-logos");
+            adminService.updateRestaurantLogo(id, imageUrl);
+            ra.addFlashAttribute("successMsg", "Đã cập nhật logo nhà hàng.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            ra.addFlashAttribute("errorMsg", ex.getMessage());
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy nhà hàng cần cập nhật logo.");
+        }
+        return "redirect:/admin/restaurants/" + id;
+    }
+
+    @PostMapping("/{id}/logo/remove")
+    public String removeLogo(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            adminService.updateRestaurantLogo(id, null);
+            ra.addFlashAttribute("successMsg", "Đã xóa logo nhà hàng.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy nhà hàng cần xóa logo.");
+        }
+        return "redirect:/admin/restaurants/" + id;
+    }
+
+    @PostMapping("/{id}/banner")
+    public String uploadBanner(@PathVariable Long id,
+                               @RequestParam(required = false) MultipartFile imageFile,
+                               RedirectAttributes ra) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            ra.addFlashAttribute("errorMsg", "Vui lòng chọn ảnh banner.");
+            return "redirect:/admin/restaurants/" + id;
+        }
+        try {
+            String imageUrl = imageStorageService.storeImage(imageFile, "restaurant-banners");
+            adminService.updateRestaurantBanner(id, imageUrl);
+            ra.addFlashAttribute("successMsg", "Đã cập nhật banner nhà hàng.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            ra.addFlashAttribute("errorMsg", ex.getMessage());
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy nhà hàng cần cập nhật banner.");
+        }
+        return "redirect:/admin/restaurants/" + id;
+    }
+
+    @PostMapping("/{id}/banner/remove")
+    public String removeBanner(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            adminService.updateRestaurantBanner(id, null);
+            ra.addFlashAttribute("successMsg", "Đã xóa banner nhà hàng.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy nhà hàng cần xóa banner.");
+        }
+        return "redirect:/admin/restaurants/" + id;
     }
 }

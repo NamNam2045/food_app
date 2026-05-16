@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 class MenuItemModel {
   MenuItemModel({
     required this.id,
@@ -22,13 +24,14 @@ class MenuItemModel {
   final int? preparationTimeMinutes;
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
+    final rawImage = json['imageUrl'] ?? json['image_url'] ?? json['image'];
     return MenuItemModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       categoryId: (json['categoryId'] as num?)?.toInt() ?? 0,
       name: (json['name'] ?? '').toString(),
       description: json['description']?.toString(),
       price: (json['price'] as num?)?.toDouble() ?? 0,
-      imageUrl: json['imageUrl']?.toString(),
+      imageUrl: AppConstants.resolveMediaUrl(rawImage?.toString()),
       isAvailable: json['available'] == true || json['isAvailable'] == true,
       calories: (json['calories'] as num?)?.toInt(),
       preparationTimeMinutes: (json['preparationTimeMinutes'] as num?)?.toInt(),

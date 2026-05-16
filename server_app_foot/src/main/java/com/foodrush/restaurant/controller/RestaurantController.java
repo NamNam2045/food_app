@@ -3,6 +3,7 @@ package com.foodrush.restaurant.controller;
 import com.foodrush.auth.security.UserPrincipal;
 import com.foodrush.common.dto.ApiResponse;
 import com.foodrush.common.dto.PageResponse;
+import com.foodrush.common.service.ImageStorageService;
 import com.foodrush.restaurant.dto.*;
 import com.foodrush.restaurant.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +13,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/v1/restaurants")
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final ImageStorageService imageStorageService;
 
     @GetMapping
     @Operation(summary = "Danh sách nhà hàng với filter, khoảng cách và phân trang")
@@ -35,8 +41,12 @@ public class RestaurantController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "rating") String sortBy) {
-        return ApiResponse.success(restaurantService.getRestaurants(
-                city, cuisineType, search, isOpen, lat, lng, maxDistanceKm, page, size, sortBy));
+        PageResponse<RestaurantSummaryResponse> response = restaurantService.getRestaurants(
+                city, cuisineType, search, isOpen, lat, lng, maxDistanceKm, page, size, sortBy);
+        if (response.getContent() != null) {
+            response.getContent().forEach(this::normalizeMediaUrls);
+        }
+        return ApiResponse.success(response);
     }
 
     @GetMapping("/{idOrSlug}")
@@ -44,9 +54,13 @@ public class RestaurantController {
     public ApiResponse<RestaurantResponse> getRestaurant(@PathVariable String idOrSlug) {
         try {
             Long id = Long.parseLong(idOrSlug);
-            return ApiResponse.success(restaurantService.getById(id));
+            RestaurantResponse response = restaurantService.getById(id);
+            normalizeMediaUrls(response);
+            return ApiResponse.success(response);
         } catch (NumberFormatException e) {
-            return ApiResponse.success(restaurantService.getBySlug(idOrSlug));
+            RestaurantResponse response = restaurantService.getBySlug(idOrSlug);
+            normalizeMediaUrls(response);
+            return ApiResponse.success(response);
         }
     }
 
@@ -57,7 +71,9 @@ public class RestaurantController {
     public ApiResponse<RestaurantResponse> createRestaurant(
             @Valid @RequestBody CreateRestaurantRequest request,
             @AuthenticationPrincipal UserPrincipal user) {
-        return ApiResponse.success(restaurantService.create(request, user.getId()), "Nhà hàng đã được tạo");
+        RestaurantResponse response = restaurantService.create(request, user.getId());
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Nhà hàng đã được tạo");
     }
 
     @PutMapping("/{id}")
@@ -67,7 +83,63 @@ public class RestaurantController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateRestaurantRequest request,
             @AuthenticationPrincipal UserPrincipal user) {
-        return ApiResponse.success(restaurantService.update(id, request, user.getId()));
+        RestaurantResponse response = restaurantService.update(id, request, user.getId());
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{id}/logo")
+    @PreAuthorize("hasAnyRole('RESTAURANT_ADMIN', 'SYSTEM_ADMIN')")
+    @Operation(summary = "Upload logo nhà hàng")
+    public ApiResponse<RestaurantResponse> uploadLogo(
+            @PathVariable Long id,
+            @RequestParam MultipartFile imageFile,
+            @AuthenticationPrincipal UserPrincipal user) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ảnh logo.");
+        }
+        String imageUrl = imageStorageService.storeImage(imageFile, "restaurant-logos");
+        RestaurantResponse response = restaurantService.updateLogo(id, imageUrl, user.getId(), isSystemAdmin(user));
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã cập nhật logo nhà hàng");
+    }
+
+    @DeleteMapping("/{id}/logo")
+    @PreAuthorize("hasAnyRole('RESTAURANT_ADMIN', 'SYSTEM_ADMIN')")
+    @Operation(summary = "Xóa logo nhà hàng")
+    public ApiResponse<RestaurantResponse> removeLogo(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        RestaurantResponse response = restaurantService.updateLogo(id, null, user.getId(), isSystemAdmin(user));
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã xóa logo nhà hàng");
+    }
+
+    @PostMapping("/{id}/banner")
+    @PreAuthorize("hasAnyRole('RESTAURANT_ADMIN', 'SYSTEM_ADMIN')")
+    @Operation(summary = "Upload banner nhà hàng")
+    public ApiResponse<RestaurantResponse> uploadBanner(
+            @PathVariable Long id,
+            @RequestParam MultipartFile imageFile,
+            @AuthenticationPrincipal UserPrincipal user) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ảnh banner.");
+        }
+        String imageUrl = imageStorageService.storeImage(imageFile, "restaurant-banners");
+        RestaurantResponse response = restaurantService.updateBanner(id, imageUrl, user.getId(), isSystemAdmin(user));
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã cập nhật banner nhà hàng");
+    }
+
+    @DeleteMapping("/{id}/banner")
+    @PreAuthorize("hasAnyRole('RESTAURANT_ADMIN', 'SYSTEM_ADMIN')")
+    @Operation(summary = "Xóa banner nhà hàng")
+    public ApiResponse<RestaurantResponse> removeBanner(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        RestaurantResponse response = restaurantService.updateBanner(id, null, user.getId(), isSystemAdmin(user));
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã xóa banner nhà hàng");
     }
 
     @DeleteMapping("/{id}")
@@ -76,5 +148,42 @@ public class RestaurantController {
     @Operation(summary = "Xóa nhà hàng")
     public void deleteRestaurant(@PathVariable Long id) {
         restaurantService.delete(id);
+    }
+
+    private boolean isSystemAdmin(UserPrincipal user) {
+        return user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_SYSTEM_ADMIN"::equals);
+    }
+
+    private void normalizeMediaUrls(RestaurantSummaryResponse response) {
+        if (response == null) {
+            return;
+        }
+        response.setLogoUrl(toAbsoluteMediaUrl(response.getLogoUrl()));
+        response.setBannerUrl(toAbsoluteMediaUrl(response.getBannerUrl()));
+    }
+
+    private void normalizeMediaUrls(RestaurantResponse response) {
+        if (response == null) {
+            return;
+        }
+        response.setLogoUrl(toAbsoluteMediaUrl(response.getLogoUrl()));
+        response.setBannerUrl(toAbsoluteMediaUrl(response.getBannerUrl()));
+    }
+
+    private String toAbsoluteMediaUrl(String rawUrl) {
+        if (!StringUtils.hasText(rawUrl)) {
+            return rawUrl;
+        }
+        String trimmed = rawUrl.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        String normalizedPath = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+        return ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path(normalizedPath)
+                .toUriString();
     }
 }

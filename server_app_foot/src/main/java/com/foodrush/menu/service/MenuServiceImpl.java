@@ -134,6 +134,15 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    public MenuItemResponse updateItemImage(Long restaurantId, Long itemId, String imageUrl) {
+        MenuItem item = itemRepository.findById(itemId)
+                .filter(i -> i.getRestaurant().getId().equals(restaurantId))
+                .orElseThrow(() -> new ResourceNotFoundException("Món ăn không tồn tại"));
+        item.setImageUrl(imageUrl);
+        return toItemResponse(itemRepository.save(item));
+    }
+
+    @Override
     public void deleteItem(Long restaurantId, Long itemId) {
         MenuItem item = itemRepository.findById(itemId)
                 .filter(i -> i.getRestaurant().getId().equals(restaurantId))

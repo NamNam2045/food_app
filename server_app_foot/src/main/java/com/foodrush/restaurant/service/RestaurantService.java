@@ -11,5 +11,7 @@ public interface RestaurantService {
     RestaurantResponse getBySlug(String slug);
     RestaurantResponse create(CreateRestaurantRequest request, Long ownerId);
     RestaurantResponse update(Long id, UpdateRestaurantRequest request, Long ownerId);
+    RestaurantResponse updateLogo(Long id, String logoUrl, Long actorId, boolean systemAdmin);
+    RestaurantResponse updateBanner(Long id, String bannerUrl, Long actorId, boolean systemAdmin);
     void delete(Long id);
 }

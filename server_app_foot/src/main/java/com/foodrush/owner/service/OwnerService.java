@@ -46,6 +46,26 @@ public class OwnerService {
         return page.isEmpty() ? Optional.empty() : Optional.of(page.getContent().get(0));
     }
 
+    public Restaurant updateRestaurantLogo(Long ownerId, Long restaurantId, String logoUrl) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        if (!restaurant.getOwner().getId().equals(ownerId)) {
+            throw new RuntimeException("Restaurant does not belong to owner");
+        }
+        restaurant.setLogoUrl(logoUrl);
+        return restaurantRepository.save(restaurant);
+    }
+
+    public Restaurant updateRestaurantBanner(Long ownerId, Long restaurantId, String bannerUrl) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        if (!restaurant.getOwner().getId().equals(ownerId)) {
+            throw new RuntimeException("Restaurant does not belong to owner");
+        }
+        restaurant.setBannerUrl(bannerUrl);
+        return restaurantRepository.save(restaurant);
+    }
+
     // ---- Dashboard ----
 
     public record DashboardStats(

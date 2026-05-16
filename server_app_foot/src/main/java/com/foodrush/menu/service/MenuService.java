@@ -11,5 +11,6 @@ public interface MenuService {
     void deleteCategory(Long restaurantId, Long categoryId);
     MenuItemResponse createItem(Long restaurantId, CreateMenuItemRequest request);
     MenuItemResponse updateItem(Long restaurantId, Long itemId, UpdateMenuItemRequest request);
+    MenuItemResponse updateItemImage(Long restaurantId, Long itemId, String imageUrl);
     void deleteItem(Long restaurantId, Long itemId);
 }

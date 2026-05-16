@@ -135,6 +135,20 @@ public class AdminService {
         return restaurantRepository.save(r);
     }
 
+    public Restaurant updateRestaurantLogo(Long restaurantId, String logoUrl) {
+        Restaurant r = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        r.setLogoUrl(logoUrl);
+        return restaurantRepository.save(r);
+    }
+
+    public Restaurant updateRestaurantBanner(Long restaurantId, String bannerUrl) {
+        Restaurant r = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        r.setBannerUrl(bannerUrl);
+        return restaurantRepository.save(r);
+    }
+
     // ---- Orders ----
     @Transactional(readOnly = true)
     public Page<Order> getOrders(OrderStatus status, String date, int page, int size) {

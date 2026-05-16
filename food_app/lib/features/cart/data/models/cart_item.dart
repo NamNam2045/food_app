@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 class CartItem {
   CartItem({
     required this.id,
@@ -24,7 +26,9 @@ class CartItem {
       id: (json['id'] as num?)?.toInt() ?? 0,
       menuItemId: (json['menuItemId'] as num?)?.toInt() ?? 0,
       menuItemName: (json['menuItemName'] ?? '').toString(),
-      menuItemImageUrl: json['menuItemImageUrl']?.toString(),
+      menuItemImageUrl: AppConstants.resolveMediaUrl(
+        json['menuItemImageUrl']?.toString(),
+      ),
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0,

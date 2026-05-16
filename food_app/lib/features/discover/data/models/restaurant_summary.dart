@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 class RestaurantSummary {
   RestaurantSummary({
     required this.id,
@@ -33,8 +35,8 @@ class RestaurantSummary {
       name: (json['name'] ?? '').toString(),
       slug: (json['slug'] ?? '').toString(),
       cuisineType: (json['cuisineType'] ?? '').toString(),
-      logoUrl: json['logoUrl']?.toString(),
-      bannerUrl: json['bannerUrl']?.toString(),
+      logoUrl: AppConstants.resolveMediaUrl(json['logoUrl']?.toString()),
+      bannerUrl: AppConstants.resolveMediaUrl(json['bannerUrl']?.toString()),
       ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
       ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
       deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0,

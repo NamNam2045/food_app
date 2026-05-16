@@ -40,6 +40,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserProfileResponse updateProfileAvatar(Long userId, String profilePictureUrl) {
+        User user = findUserById(userId);
+        user.setProfilePictureUrl(profilePictureUrl);
+        return toProfileResponse(userRepository.save(user));
+    }
+
+    @Override
+    public UserProfileResponse removeProfileAvatar(Long userId) {
+        User user = findUserById(userId);
+        user.setProfilePictureUrl(null);
+        return toProfileResponse(userRepository.save(user));
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<AddressResponse> getAddresses(Long userId) {
         return addressRepository.findByUserIdOrderByDefaultAddressDesc(userId)

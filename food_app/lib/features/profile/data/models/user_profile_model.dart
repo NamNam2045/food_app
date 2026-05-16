@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 class UserProfileModel {
   UserProfileModel({
     required this.id,
@@ -31,7 +33,8 @@ class UserProfileModel {
       lastName: (json['lastName'] ?? '').toString(),
       phoneNumber: json['phoneNumber']?.toString(),
       role: (json['role'] ?? '').toString(),
-      profilePictureUrl: json['profilePictureUrl']?.toString(),
+      profilePictureUrl:
+          AppConstants.resolveMediaUrl(json['profilePictureUrl']?.toString()),
       emailVerified:
           json['emailVerified'] == true || json['isEmailVerified'] == true,
       createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()),

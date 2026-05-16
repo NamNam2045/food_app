@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 class RestaurantDetail {
   RestaurantDetail({
     required this.id,
@@ -46,8 +48,8 @@ class RestaurantDetail {
       estimatedDeliveryMinutes:
           (json['estimatedDeliveryMinutes'] as num?)?.toInt() ?? 0,
       isOpen: json['open'] == true || json['isOpen'] == true,
-      bannerUrl: json['bannerUrl']?.toString(),
-      logoUrl: json['logoUrl']?.toString(),
+      bannerUrl: AppConstants.resolveMediaUrl(json['bannerUrl']?.toString()),
+      logoUrl: AppConstants.resolveMediaUrl(json['logoUrl']?.toString()),
     );
   }
 }

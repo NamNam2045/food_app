@@ -17,6 +17,10 @@ docker-compose up -d
 App sẽ khởi động tại: http://localhost:8080  
 Swagger UI: http://localhost:8080/swagger-ui.html
 
+Lưu ý:
+- Hãy chạy bằng `docker-compose` (không chạy `docker run` trực tiếp cho app image), vì app cần env `DB_HOST=postgres`, `REDIS_HOST=redis`.
+- Ảnh upload sẽ được lưu trong volume Docker `uploads_data` và được serve qua đường dẫn `/uploads/**`.
+
 ## Chạy local (cần PostgreSQL và Redis đang chạy)
 
 ```bash
@@ -84,4 +88,5 @@ V7 → reviews
 | DB_USERNAME | postgres | DB user |
 | DB_PASSWORD | postgres | DB password |
 | REDIS_HOST | localhost | Redis host |
+| APP_UPLOAD_DIR | ./uploads | Thư mục lưu ảnh upload |
 | JWT_SECRET | (hardcoded dev key) | JWT signing key (≥32 chars) |

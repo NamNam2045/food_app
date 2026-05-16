@@ -24,6 +24,88 @@
     </div>
 
     <div th:if="${restaurant != null}">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+            <div class="card-header bg-white border-0 pt-3 pb-0">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-image me-2 text-success"></i>Quản lý ảnh quán (logo/banner)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label fw-semibold mb-1">Logo</label>
+                        <div class="mb-2">
+                            <img th:if="${restaurant.logoUrl}"
+                                 th:src="${restaurant.logoUrl}"
+                                 alt="logo quán"
+                                 class="rounded border"
+                                 style="width:96px;height:96px;object-fit:cover;"/>
+                            <div th:unless="${restaurant.logoUrl}"
+                                 class="rounded border d-inline-flex align-items-center justify-content-center text-muted"
+                                 style="width:96px;height:96px;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        </div>
+                        <form method="post" enctype="multipart/form-data"
+                              th:action="@{/owner/dashboard/logo}"
+                              class="d-flex gap-2 mb-2">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="restaurantId" th:value="${restaurant.id}"/>
+                            <input type="file" name="imageFile" accept="image/*"
+                                   class="form-control form-control-sm" required>
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-upload"></i>
+                            </button>
+                        </form>
+                        <form method="post"
+                              th:action="@{/owner/dashboard/logo/remove}"
+                              onsubmit="return confirm('Xóa logo quán?')">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="restaurantId" th:value="${restaurant.id}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-trash3 me-1"></i>Xóa logo
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-lg-8">
+                        <label class="form-label fw-semibold mb-1">Banner</label>
+                        <div class="mb-2">
+                            <img th:if="${restaurant.bannerUrl}"
+                                 th:src="${restaurant.bannerUrl}"
+                                 alt="banner quán"
+                                 class="rounded border w-100"
+                                 style="height:120px;object-fit:cover;"/>
+                            <div th:unless="${restaurant.bannerUrl}"
+                                 class="rounded border d-flex align-items-center justify-content-center text-muted w-100"
+                                 style="height:120px;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        </div>
+                        <form method="post" enctype="multipart/form-data"
+                              th:action="@{/owner/dashboard/banner}"
+                              class="d-flex gap-2 mb-2">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="restaurantId" th:value="${restaurant.id}"/>
+                            <input type="file" name="imageFile" accept="image/*"
+                                   class="form-control form-control-sm" required>
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-upload"></i>
+                            </button>
+                        </form>
+                        <form method="post"
+                              th:action="@{/owner/dashboard/banner/remove}"
+                              onsubmit="return confirm('Xóa banner quán?')">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="restaurantId" th:value="${restaurant.id}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-trash3 me-1"></i>Xóa banner
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stats row -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3">

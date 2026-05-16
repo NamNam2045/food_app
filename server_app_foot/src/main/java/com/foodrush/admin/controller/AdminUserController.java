@@ -54,4 +54,15 @@ public class AdminUserController {
         }
         return "redirect:/admin/users";
     }
+
+    @PostMapping("/{userId}/avatar/remove")
+    public String removeAvatar(@PathVariable Long userId, RedirectAttributes ra) {
+        try {
+            var user = adminService.updateUserAvatar(userId, null);
+            ra.addFlashAttribute("successMsg", "Đã xóa avatar của " + user.getEmail());
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMsg", "Không tìm thấy người dùng cần xóa avatar.");
+        }
+        return "redirect:/admin/users";
+    }
 }

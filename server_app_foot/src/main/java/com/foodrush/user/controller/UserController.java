@@ -2,6 +2,7 @@ package com.foodrush.user.controller;
 
 import com.foodrush.auth.security.UserPrincipal;
 import com.foodrush.common.dto.ApiResponse;
+import com.foodrush.common.service.ImageStorageService;
 import com.foodrush.user.dto.*;
 import com.foodrush.user.dto.UpdateFcmTokenRequest;
 import com.foodrush.user.service.UserService;
@@ -12,7 +13,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -24,11 +28,14 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final ImageStorageService imageStorageService;
 
     @GetMapping("/me")
     @Operation(summary = "Lấy thông tin profile")
     public ApiResponse<UserProfileResponse> getProfile(@AuthenticationPrincipal UserPrincipal user) {
-        return ApiResponse.success(userService.getProfile(user.getId()));
+        UserProfileResponse response = userService.getProfile(user.getId());
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response);
     }
 
     @PutMapping("/me")
@@ -36,7 +43,32 @@ public class UserController {
     public ApiResponse<UserProfileResponse> updateProfile(
             @AuthenticationPrincipal UserPrincipal user,
             @Valid @RequestBody UpdateProfileRequest request) {
-        return ApiResponse.success(userService.updateProfile(user.getId(), request));
+        UserProfileResponse response = userService.updateProfile(user.getId(), request);
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/me/avatar")
+    @Operation(summary = "Tải lên avatar profile")
+    public ApiResponse<UserProfileResponse> uploadAvatar(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam MultipartFile avatarFile) {
+        if (avatarFile == null || avatarFile.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ảnh avatar.");
+        }
+        String avatarUrl = imageStorageService.storeImage(avatarFile, "avatars");
+        UserProfileResponse response = userService.updateProfileAvatar(user.getId(), avatarUrl);
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã cập nhật avatar");
+    }
+
+    @DeleteMapping("/me/avatar")
+    @Operation(summary = "Xóa avatar profile")
+    public ApiResponse<UserProfileResponse> removeAvatar(
+            @AuthenticationPrincipal UserPrincipal user) {
+        UserProfileResponse response = userService.removeProfileAvatar(user.getId());
+        normalizeMediaUrls(response);
+        return ApiResponse.success(response, "Đã xóa avatar");
     }
 
     @GetMapping("/me/addresses")
@@ -79,5 +111,27 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal user,
             @Valid @RequestBody UpdateFcmTokenRequest request) {
         userService.updateFcmToken(user.getId(), request.getFcmToken());
+    }
+
+    private void normalizeMediaUrls(UserProfileResponse response) {
+        if (response == null) {
+            return;
+        }
+        response.setProfilePictureUrl(toAbsoluteMediaUrl(response.getProfilePictureUrl()));
+    }
+
+    private String toAbsoluteMediaUrl(String rawUrl) {
+        if (!StringUtils.hasText(rawUrl)) {
+            return rawUrl;
+        }
+        String trimmed = rawUrl.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        String normalizedPath = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+        return ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path(normalizedPath)
+                .toUriString();
     }
 }

@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
         "com.foodrush.payment",
         "com.foodrush.restaurant",
         "com.foodrush.review",
-        "com.foodrush.notification"
+        "com.foodrush.notification",
+        "com.foodrush.user"
 })
 @Slf4j
 public class GlobalExceptionHandler {
@@ -65,6 +66,12 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         return ApiResponse.error("VALIDATION_ERROR", "Dữ liệu không hợp lệ", errors);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException ex) {
+        return ApiResponse.error("BAD_REQUEST", ex.getMessage());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
