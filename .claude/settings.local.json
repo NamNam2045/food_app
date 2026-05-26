@@ -28,7 +28,8 @@
       "Bash(./mvnw -q -DskipTests compile)",
       "Bash(java -version)",
       "Read(//usr/lib/**)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(xargs ls -la)"
     ]
   },
   "enableAllProjectMcpServers": true,

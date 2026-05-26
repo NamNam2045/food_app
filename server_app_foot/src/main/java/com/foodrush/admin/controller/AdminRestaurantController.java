@@ -1,14 +1,21 @@
 package com.foodrush.admin.controller;
 
 import com.foodrush.admin.service.AdminService;
+import com.foodrush.common.exceptions.BusinessRuleException;
+import com.foodrush.common.exceptions.ResourceNotFoundException;
 import com.foodrush.common.service.ImageStorageService;
+import com.foodrush.restaurant.entity.Restaurant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+
+@Slf4j
 @Controller
 @RequestMapping("/admin/restaurants")
 @RequiredArgsConstructor
@@ -26,6 +33,51 @@ public class AdminRestaurantController {
         model.addAttribute("currentPage", page);
         model.addAttribute("activePage", "restaurants");
         return "admin/restaurants/list";
+    }
+
+    @GetMapping("/new")
+    public String createForm(Model model) {
+        model.addAttribute("owners", adminService.getAvailableOwners());
+        model.addAttribute("activePage", "restaurants");
+        return "admin/restaurants/new";
+    }
+
+    @PostMapping("/create")
+    public String create(@RequestParam Long ownerId,
+                         @RequestParam String name,
+                         @RequestParam String cuisineType,
+                         @RequestParam String streetAddress,
+                         @RequestParam String city,
+                         @RequestParam(required = false) String description,
+                         @RequestParam(required = false) String phone,
+                         @RequestParam(required = false) String email,
+                         @RequestParam(required = false) BigDecimal minOrderAmount,
+                         @RequestParam(required = false) BigDecimal deliveryFee,
+                         @RequestParam(required = false) Integer estimatedDeliveryMinutes,
+                         @RequestParam(required = false) MultipartFile logoFile,
+                         @RequestParam(required = false) MultipartFile bannerFile,
+                         RedirectAttributes ra) {
+        try {
+            Restaurant created = adminService.createRestaurant(ownerId, name, cuisineType,
+                    streetAddress, city, description, phone, email,
+                    minOrderAmount, deliveryFee, estimatedDeliveryMinutes);
+
+            if (logoFile != null && !logoFile.isEmpty()) {
+                String url = imageStorageService.storeImage(logoFile, "restaurant-logos");
+                adminService.updateRestaurantLogo(created.getId(), url);
+            }
+            if (bannerFile != null && !bannerFile.isEmpty()) {
+                String url = imageStorageService.storeImage(bannerFile, "restaurant-banners");
+                adminService.updateRestaurantBanner(created.getId(), url);
+            }
+            ra.addFlashAttribute("successMsg", "Đã tạo nhà hàng \"" + created.getName() + "\"");
+            return "redirect:/admin/restaurants/" + created.getId();
+        } catch (BusinessRuleException | ResourceNotFoundException |
+                 IllegalArgumentException | IllegalStateException ex) {
+            log.warn("Create restaurant failed: {}", ex.getMessage());
+            ra.addFlashAttribute("errorMsg", ex.getMessage());
+            return "redirect:/admin/restaurants/new";
+        }
     }
 
     @GetMapping("/{id}")

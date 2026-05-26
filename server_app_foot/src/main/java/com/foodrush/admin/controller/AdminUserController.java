@@ -1,14 +1,18 @@
 package com.foodrush.admin.controller;
 
 import com.foodrush.admin.service.AdminService;
+import com.foodrush.common.enums.UserRole;
+import com.foodrush.common.exceptions.BusinessRuleException;
 import com.foodrush.common.service.ImageStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
@@ -26,6 +30,25 @@ public class AdminUserController {
         model.addAttribute("currentPage", page);
         model.addAttribute("activePage", "users");
         return "admin/users/list";
+    }
+
+    @PostMapping("/create")
+    public String create(@RequestParam String email,
+                         @RequestParam(required = false) String phoneNumber,
+                         @RequestParam String password,
+                         @RequestParam String firstName,
+                         @RequestParam String lastName,
+                         @RequestParam UserRole role,
+                         RedirectAttributes ra) {
+        try {
+            var user = adminService.createUser(email, phoneNumber, password, firstName, lastName, role);
+            ra.addFlashAttribute("successMsg",
+                    "Đã tạo tài khoản " + user.getEmail() + " (" + user.getRole() + ")");
+        } catch (BusinessRuleException ex) {
+            log.warn("Create user failed: {}", ex.getMessage());
+            ra.addFlashAttribute("errorMsg", ex.getMessage());
+        }
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/{userId}/toggle-active")

@@ -11,6 +11,68 @@
             <h4 class="mb-0 fw-bold">Người dùng</h4>
             <p class="text-muted mb-0" style="font-size:.85rem;">Quản lý tài khoản người dùng</p>
         </div>
+        <button type="button" class="btn btn-warning fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#modalCreateUser">
+            <i class="bi bi-person-plus me-1"></i> Tạo tài khoản
+        </button>
+    </div>
+
+    <!-- Modal: Create user -->
+    <div class="modal fade" id="modalCreateUser" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" th:action="@{/admin/users/create}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-person-plus me-2"></i>Tạo tài khoản mới
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Vai trò <span class="text-danger">*</span></label>
+                                <select name="role" class="form-select" required>
+                                    <option value="CUSTOMER">Khách hàng (CUSTOMER)</option>
+                                    <option value="RESTAURANT_ADMIN">Chủ nhà hàng (RESTAURANT_ADMIN)</option>
+                                    <option value="DELIVERY_AGENT">Shipper (DELIVERY_AGENT)</option>
+                                    <option value="SYSTEM_ADMIN">Quản trị hệ thống (SYSTEM_ADMIN)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Họ <span class="text-danger">*</span></label>
+                                <input type="text" name="firstName" class="form-control" required maxlength="100"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Tên <span class="text-danger">*</span></label>
+                                <input type="text" name="lastName" class="form-control" required maxlength="100"/>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required maxlength="255"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Số điện thoại</label>
+                                <input type="text" name="phoneNumber" class="form-control" maxlength="20"
+                                       pattern="^[0-9]{10,11}$" placeholder="0901234567"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                                <input type="text" name="password" class="form-control" required minlength="8"
+                                       placeholder="Tối thiểu 8 ký tự"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+                        <button type="submit" class="btn btn-warning fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i> Tạo tài khoản
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Search form -->

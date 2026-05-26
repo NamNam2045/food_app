@@ -15,6 +15,9 @@ import com.foodrush.restaurant.entity.Restaurant;
 import com.foodrush.restaurant.repository.RestaurantRepository;
 import com.foodrush.review.entity.Review;
 import com.foodrush.review.repository.ReviewRepository;
+import com.foodrush.common.enums.UserRole;
+import com.foodrush.common.exceptions.BusinessRuleException;
+import com.foodrush.common.exceptions.ResourceNotFoundException;
 import com.foodrush.user.entity.User;
 import com.foodrush.user.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -23,8 +26,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.text.Normalizer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,6 +52,7 @@ public class AdminService {
     private final PromoCodeRepository promoCodeRepository;
     private final MenuCategoryRepository menuCategoryRepository;
     private final MenuItemRepository menuItemRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // ---- Dashboard ----
     @Transactional(readOnly = true)
@@ -99,6 +106,40 @@ public class AdminService {
         return userRepository.save(user);
     }
 
+    /** Tạo tài khoản mới với role bất kỳ (CUSTOMER, RESTAURANT_ADMIN, DELIVERY_AGENT, SYSTEM_ADMIN). */
+    public User createUser(String email, String phoneNumber, String rawPassword,
+                           String firstName, String lastName, UserRole role) {
+        if (email == null || email.isBlank()) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Email không được để trống");
+        }
+        if (rawPassword == null || rawPassword.length() < 8) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Mật khẩu phải có ít nhất 8 ký tự");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new BusinessRuleException("USER_001", "Email đã tồn tại");
+        }
+        if (phoneNumber != null && !phoneNumber.isBlank()
+                && userRepository.existsByPhoneNumber(phoneNumber.trim())) {
+            throw new BusinessRuleException("USER_002", "Số điện thoại đã được dùng");
+        }
+        if (role == null) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Vai trò không được để trống");
+        }
+
+        User user = User.builder()
+                .email(normalizedEmail)
+                .phoneNumber(phoneNumber == null || phoneNumber.isBlank() ? null : phoneNumber.trim())
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .firstName(firstName == null ? "" : firstName.trim())
+                .lastName(lastName == null ? "" : lastName.trim())
+                .role(role)
+                .active(true)
+                .emailVerified(true)
+                .build();
+        return userRepository.save(user);
+    }
+
     public User updateUserAvatar(Long userId, String avatarUrl) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -119,6 +160,75 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Optional<Restaurant> getRestaurantById(Long id) {
         return restaurantRepository.findById(id);
+    }
+
+    /** Lấy danh sách user có role RESTAURANT_ADMIN để chọn làm chủ nhà hàng. */
+    @Transactional(readOnly = true)
+    public List<User> getAvailableOwners() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.RESTAURANT_ADMIN && u.isActive())
+                .sorted((a, b) -> a.getEmail().compareToIgnoreCase(b.getEmail()))
+                .toList();
+    }
+
+    /** Tạo nhà hàng mới và gán cho một owner (user có role RESTAURANT_ADMIN). */
+    public Restaurant createRestaurant(Long ownerId, String name, String cuisineType,
+                                       String streetAddress, String city,
+                                       String description, String phone, String email,
+                                       BigDecimal minOrderAmount, BigDecimal deliveryFee,
+                                       Integer estimatedDeliveryMinutes) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Tên nhà hàng không được để trống");
+        }
+        if (cuisineType == null || cuisineType.isBlank()) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Loại ẩm thực không được để trống");
+        }
+        if (streetAddress == null || streetAddress.isBlank() || city == null || city.isBlank()) {
+            throw new BusinessRuleException("VALIDATION_ERROR", "Địa chỉ không được để trống");
+        }
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Owner không tồn tại"));
+        if (owner.getRole() != UserRole.RESTAURANT_ADMIN) {
+            throw new BusinessRuleException("VALIDATION_ERROR",
+                    "Chủ sở hữu phải có vai trò RESTAURANT_ADMIN");
+        }
+
+        String slug = generateUniqueSlug(name);
+
+        Restaurant restaurant = Restaurant.builder()
+                .owner(owner)
+                .name(name.trim())
+                .slug(slug)
+                .description(description)
+                .cuisineType(cuisineType.trim())
+                .phone(phone)
+                .email(email)
+                .streetAddress(streetAddress.trim())
+                .city(city.trim())
+                .minOrderAmount(minOrderAmount == null ? BigDecimal.ZERO : minOrderAmount)
+                .deliveryFee(deliveryFee == null ? BigDecimal.ZERO : deliveryFee)
+                .estimatedDeliveryMinutes(estimatedDeliveryMinutes == null ? 30 : estimatedDeliveryMinutes)
+                .active(true)
+                .open(false)
+                .build();
+        return restaurantRepository.save(restaurant);
+    }
+
+    private String generateUniqueSlug(String name) {
+        String base = Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .toLowerCase()
+                .replaceAll("đ", "d")
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (base.isBlank()) base = "restaurant";
+        String slug = base;
+        int suffix = 2;
+        while (restaurantRepository.findBySlug(slug).isPresent()) {
+            slug = base + "-" + suffix;
+            suffix++;
+        }
+        return slug;
     }
 
     public Restaurant toggleRestaurantOpen(Long restaurantId) {

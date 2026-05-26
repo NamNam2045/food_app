@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Thêm nhà hàng — FoodRush Admin</title></head>
+<body>
+<div layout:fragment="content">
+
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/admin/restaurants}">Nhà hàng</a></li>
+            <li class="breadcrumb-item active">Thêm mới</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+        <div class="card-header bg-white border-0 pt-3 pb-2">
+            <h5 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-warning"></i>Tạo nhà hàng mới</h5>
+            <p class="text-muted mb-0" style="font-size:.85rem;">
+                Chọn chủ sở hữu (user role RESTAURANT_ADMIN). Logo/banner có thể upload sau qua trang chi tiết.
+            </p>
+        </div>
+        <form method="post" enctype="multipart/form-data"
+              th:action="@{/admin/restaurants/create}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Chủ sở hữu <span class="text-danger">*</span></label>
+                        <select name="ownerId" class="form-select" required>
+                            <option value="" disabled selected>— Chọn chủ sở hữu —</option>
+                            <option th:each="o : ${owners}"
+                                    th:value="${o.id}"
+                                    th:text="${o.firstName + ' ' + o.lastName + ' — ' + o.email}"></option>
+                        </select>
+                        <div class="form-text" th:if="${owners.empty}">
+                            Chưa có user nào có role RESTAURANT_ADMIN.
+                            <a th:href="@{/admin/users}">Tạo tài khoản owner trước</a>.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tên nhà hàng <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required maxlength="255"
+                               placeholder="Phở 24"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Loại ẩm thực <span class="text-danger">*</span></label>
+                        <input type="text" name="cuisineType" class="form-control" required maxlength="100"
+                               placeholder="Việt / Nhật / Ý / ..."/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Điện thoại</label>
+                        <input type="text" name="phone" class="form-control" maxlength="20"
+                               placeholder="024-XXXX-XXXX"/>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Địa chỉ <span class="text-danger">*</span></label>
+                        <input type="text" name="streetAddress" class="form-control" required maxlength="255"
+                               placeholder="Số nhà, đường, quận"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Thành phố <span class="text-danger">*</span></label>
+                        <input type="text" name="city" class="form-control" required maxlength="100"
+                               placeholder="Hà Nội / TP HCM"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email liên hệ</label>
+                        <input type="email" name="email" class="form-control" maxlength="255"
+                               placeholder="contact@restaurant.vn"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Mô tả</label>
+                        <textarea name="description" class="form-control" rows="1"
+                                  placeholder="Giới thiệu ngắn về quán"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Đơn tối thiểu (đ)</label>
+                        <input type="number" name="minOrderAmount" class="form-control"
+                               min="0" step="1000" value="0"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Phí giao hàng (đ)</label>
+                        <input type="number" name="deliveryFee" class="form-control"
+                               min="0" step="1000" value="0"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">TG giao dự kiến (phút)</label>
+                        <input type="number" name="estimatedDeliveryMinutes" class="form-control"
+                               min="1" value="30"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Logo (tuỳ chọn)</label>
+                        <input type="file" name="logoFile" accept="image/*" class="form-control"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Banner (tuỳ chọn)</label>
+                        <input type="file" name="bannerFile" accept="image/*" class="form-control"/>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                <a th:href="@{/admin/restaurants}" class="btn btn-outline-secondary">Huỷ</a>
+                <button type="submit" class="btn btn-warning fw-semibold">
+                    <i class="bi bi-check-circle me-1"></i> Tạo nhà hàng
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

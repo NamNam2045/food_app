@@ -4,13 +4,18 @@
 --
 -- Tài khoản test:
 --   SYSTEM_ADMIN  : admin@foodrush.vn     / Admin@123
---   RESTAURANT_ADMIN: lan@restaurant.vn  / Owner@123
---   RESTAURANT_ADMIN: hoang@restaurant.vn/ Owner@123
+--   RESTAURANT_ADMIN: lan@restaurant.vn   / Owner@123  → "Phở Hà Nội Ngon"
+--   RESTAURANT_ADMIN: hoang@restaurant.vn / Owner@123  → "Sushi Sakura"
+--   RESTAURANT_ADMIN: tu@restaurant.vn    / Owner@123  → "Cơm Tấm Sài Gòn 36"
+--   RESTAURANT_ADMIN: phong@restaurant.vn / Owner@123  → "Pizza Express Hà Nội"
 --   CUSTOMER      : hoa@example.com      / Customer@123
 --   CUSTOMER      : binh@example.com     / Customer@123
 --   CUSTOMER      : hang@example.com     / Customer@123
 --   DELIVERY_AGENT: tai@shipper.vn       / Shipper@123
 --   DELIVERY_AGENT: mai@shipper.vn       / Shipper@123
+--
+-- Lưu ý: logo/banner nhà hàng và ảnh menu items được seed = NULL
+-- để admin/owner upload ảnh thật qua giao diện, tránh broken URLs.
 -- ============================================================
 
 -- ============================================================
@@ -49,7 +54,16 @@ VALUES
 
   (8,  'mai@shipper.vn',      '0908000008',
    '$2b$10$Yscpe0c9EMJFkHpnWPz6y.Xs.R/N/wsnMm2AQUQ.vlSY61iAQwcEm',
-   'Thị', 'Mai', 'DELIVERY_AGENT', TRUE, TRUE, NOW() - INTERVAL '40 days', NOW());
+   'Thị', 'Mai', 'DELIVERY_AGENT', TRUE, TRUE, NOW() - INTERVAL '40 days', NOW()),
+
+  -- Thêm 2 owner nữa để mỗi nhà hàng có 1 owner riêng (1:1)
+  (9,  'tu@restaurant.vn',    '0909000009',
+   '$2b$10$JcM0FM2hU3PuiF0/jMpiy.LOBnQfUCK/BectS98vS7IQo4zM0VCsi',
+   'Văn', 'Tú', 'RESTAURANT_ADMIN', TRUE, TRUE, NOW() - INTERVAL '52 days', NOW()),
+
+  (10, 'phong@restaurant.vn', '0910000010',
+   '$2b$10$JcM0FM2hU3PuiF0/jMpiy.LOBnQfUCK/BectS98vS7IQo4zM0VCsi',
+   'Đức', 'Phong', 'RESTAURANT_ADMIN', TRUE, TRUE, NOW() - INTERVAL '48 days', NOW());
 
 -- ============================================================
 -- 2. ADDRESSES
@@ -84,8 +98,7 @@ VALUES
    'pho-ha-noi-ngon',
    'Phở bò truyền thống Hà Nội, nước dùng ninh xương 12 tiếng, hương vị đậm đà khó quên.',
    'Ẩm thực Việt',
-   'https://images.foodrush.vn/logos/pho-ha-noi-ngon.png',
-   'https://images.foodrush.vn/banners/pho-ha-noi-ngon.jpg',
+   NULL, NULL,
    '024-3825-6789', 'contact@pho-hanoi.vn',
    '47 Bát Đàn, Hoàn Kiếm', 'Hà Nội',
    21.02850, 105.85420,
@@ -93,13 +106,12 @@ VALUES
    50000.00, 15000.00, 30,
    TRUE, TRUE, NOW() - INTERVAL '60 days', NOW()),
 
-  (2, 2,
+  (2, 9,
    'Cơm Tấm Sài Gòn 36',
    'com-tam-sai-gon-36',
    'Cơm tấm đặc sản Sài Gòn, bì, chả, sườn nướng thơm lừng. Mở cửa từ 6 giờ sáng.',
    'Ẩm thực Việt',
-   'https://images.foodrush.vn/logos/com-tam-sai-gon.png',
-   'https://images.foodrush.vn/banners/com-tam-sai-gon.jpg',
+   NULL, NULL,
    '028-3821-4567', 'contact@comtam36.vn',
    '36 Võ Văn Tần, Quận 3', 'TP Hồ Chí Minh',
    10.77690, 106.70090,
@@ -112,8 +124,7 @@ VALUES
    'sushi-sakura',
    'Nhà hàng Nhật chính thống, nguyên liệu tươi nhập khẩu, đầu bếp được đào tạo tại Tokyo.',
    'Nhật Bản',
-   'https://images.foodrush.vn/logos/sushi-sakura.png',
-   'https://images.foodrush.vn/banners/sushi-sakura.jpg',
+   NULL, NULL,
    '028-3924-8888', 'hello@sakura-sushi.vn',
    '12 Lê Lợi, Quận 1', 'TP Hồ Chí Minh',
    10.78200, 106.69800,
@@ -121,13 +132,12 @@ VALUES
    100000.00, 20000.00, 40,
    TRUE, TRUE, NOW() - INTERVAL '50 days', NOW()),
 
-  (4, 3,
+  (4, 10,
    'Pizza Express Hà Nội',
    'pizza-express-ha-noi',
    'Pizza Ý theo công thức truyền thống, lò nướng củi nhập từ Napoli. Free ship trong 5km.',
    'Ý',
-   'https://images.foodrush.vn/logos/pizza-express.png',
-   'https://images.foodrush.vn/banners/pizza-express.jpg',
+   NULL, NULL,
    '024-3716-5555', 'info@pizza-express.vn',
    '88 Kim Mã, Ba Đình', 'Hà Nội',
    21.02270, 105.84120,
@@ -524,6 +534,14 @@ VALUES
 -- 12. CẬP NHẬT PROMO CODE đã dùng (Order 3 dùng FIRST10)
 -- ============================================================
 UPDATE promo_codes SET used_count = 1 WHERE code = 'FIRST10';
+
+-- ============================================================
+-- 12b. CLEAR ẢNH MENU ITEMS
+-- Image URLs trong INSERT trên là placeholder không tồn tại
+-- (https://images.foodrush.vn/...). Set NULL để UI hiển thị
+-- icon placeholder, owner sẽ upload ảnh thật qua trang Menu.
+-- ============================================================
+UPDATE menu_items SET image_url = NULL;
 
 -- ============================================================
 -- 13. RESET SEQUENCES (để INSERT tiếp không bị conflict)
