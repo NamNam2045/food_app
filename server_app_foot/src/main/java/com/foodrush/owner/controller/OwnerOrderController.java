@@ -2,15 +2,19 @@ package com.foodrush.owner.controller;
 
 import com.foodrush.auth.security.UserPrincipal;
 import com.foodrush.common.enums.OrderStatus;
+import com.foodrush.common.exceptions.BusinessRuleException;
+import com.foodrush.common.exceptions.ResourceNotFoundException;
 import com.foodrush.owner.service.OwnerService;
 import com.foodrush.restaurant.entity.Restaurant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/owner/orders")
 @RequiredArgsConstructor
@@ -59,8 +63,14 @@ public class OwnerOrderController {
                                @AuthenticationPrincipal UserPrincipal principal,
                                RedirectAttributes ra) {
         Restaurant restaurant = getRestaurantOrThrow(principal.getId());
-        ownerService.updateOrderStatus(id, restaurant.getId(), newStatus);
-        ra.addFlashAttribute("successMsg", "Đã cập nhật trạng thái đơn hàng.");
+        try {
+            ownerService.updateOrderStatus(id, restaurant.getId(), newStatus);
+            ra.addFlashAttribute("successMsg", "Đã cập nhật trạng thái đơn hàng.");
+        } catch (BusinessRuleException | ResourceNotFoundException e) {
+            log.warn("Owner {} update order {} to {} failed: {}",
+                    principal.getId(), id, newStatus, e.getMessage());
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/owner/orders/" + id;
     }
 }

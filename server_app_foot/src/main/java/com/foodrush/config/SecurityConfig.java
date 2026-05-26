@@ -20,6 +20,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -43,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/css/**", "/admin/js/**", "/admin/img/**").permitAll()
                         .anyRequest().hasRole("SYSTEM_ADMIN")
                 )
+                .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler()))
                 .formLogin(form -> form
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
@@ -73,6 +76,7 @@ public class SecurityConfig {
                         .requestMatchers("/owner/login").permitAll()
                         .anyRequest().hasRole("RESTAURANT_ADMIN")
                 )
+                .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler()))
                 .formLogin(form -> form
                         .loginPage("/owner/login")
                         .loginProcessingUrl("/owner/login")
@@ -103,6 +107,7 @@ public class SecurityConfig {
                         .requestMatchers("/shipper/login").permitAll()
                         .anyRequest().hasRole("DELIVERY_AGENT")
                 )
+                .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler()))
                 .formLogin(form -> form
                         .loginPage("/shipper/login")
                         .loginProcessingUrl("/shipper/login")
@@ -146,6 +151,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(apiAuthEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
+                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -159,6 +168,27 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
+    }
+
+    /**
+     * Khi user đã đăng nhập nhưng không đủ quyền (sai role) thì gọi sendError(403)
+     * để container forward sang /error dispatcher, CustomErrorController sẽ render
+     * trang 403 thân thiện (HTML) hoặc JSON (với /api/**) thay vì Whitelabel.
+     */
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, ex) ->
+                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN, ex.getMessage());
+    }
+
+    /**
+     * Khi API request chưa xác thực (thiếu/sai JWT) thì trả 401 thay vì redirect
+     * sang login page. CustomErrorController sẽ render JSON cho /api/**.
+     */
+    @Bean
+    public AuthenticationEntryPoint apiAuthEntryPoint() {
+        return (request, response, ex) ->
+                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
     }
 
     @Bean

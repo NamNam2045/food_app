@@ -2,14 +2,18 @@ package com.foodrush.shipper.controller;
 
 import com.foodrush.auth.security.UserPrincipal;
 import com.foodrush.common.enums.OrderStatus;
+import com.foodrush.common.exceptions.BusinessRuleException;
+import com.foodrush.common.exceptions.ResourceNotFoundException;
 import com.foodrush.shipper.service.ShipperService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/shipper/orders")
 @RequiredArgsConstructor
@@ -42,8 +46,14 @@ public class ShipperOrderController {
     public String acceptOrder(@PathVariable Long id,
                               @AuthenticationPrincipal UserPrincipal principal,
                               RedirectAttributes ra) {
-        shipperService.acceptOrder(id, principal.getId());
-        ra.addFlashAttribute("successMsg", "Đã nhận đơn hàng thành công!");
+        try {
+            shipperService.acceptOrder(id, principal.getId());
+            ra.addFlashAttribute("successMsg", "Đã nhận đơn hàng thành công!");
+        } catch (BusinessRuleException | ResourceNotFoundException e) {
+            log.warn("Shipper {} accept order {} failed: {}", principal.getId(), id, e.getMessage());
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/shipper/dashboard";
+        }
         return "redirect:/shipper/orders/" + id;
     }
 
@@ -52,8 +62,14 @@ public class ShipperOrderController {
                                @RequestParam OrderStatus newStatus,
                                @AuthenticationPrincipal UserPrincipal principal,
                                RedirectAttributes ra) {
-        shipperService.updateStatus(id, principal.getId(), newStatus);
-        ra.addFlashAttribute("successMsg", "Đã cập nhật trạng thái giao hàng.");
+        try {
+            shipperService.updateStatus(id, principal.getId(), newStatus);
+            ra.addFlashAttribute("successMsg", "Đã cập nhật trạng thái giao hàng.");
+        } catch (BusinessRuleException | ResourceNotFoundException e) {
+            log.warn("Shipper {} update order {} to {} failed: {}",
+                    principal.getId(), id, newStatus, e.getMessage());
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/shipper/orders/" + id;
     }
 }

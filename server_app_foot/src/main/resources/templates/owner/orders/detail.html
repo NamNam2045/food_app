@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <!-- Update status -->
+            <!-- Update status: chỉ hiển thị khi đơn còn nằm trong giai đoạn nhà hàng xử lý -->
             <div class="card border-0 shadow-sm" style="border-radius:12px;"
                  th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CONFIRMED' or order.status.name() == 'PREPARING'}">
                 <div class="card-body">
@@ -114,7 +114,7 @@
                                     class="btn btn-success btn-sm" type="submit">
                                 <i class="bi bi-bag-check me-1"></i> Sẵn sàng giao
                             </button>
-                            <button th:if="${order.status.name() == 'PENDING'}"
+                            <button th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CONFIRMED'}"
                                     name="newStatus" value="CANCELLED"
                                     class="btn btn-outline-danger btn-sm" type="submit"
                                     onclick="return confirm('Huỷ đơn hàng này?')">
@@ -122,6 +122,17 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Trạng thái sau giai đoạn nhà hàng: chỉ hiển thị thông tin -->
+            <div class="card border-0 shadow-sm" style="border-radius:12px;"
+                 th:if="${order.status.name() == 'READY_FOR_PICKUP' or order.status.name() == 'PICKED_UP' or order.status.name() == 'ON_THE_WAY'}">
+                <div class="card-body text-center">
+                    <i class="bi bi-truck text-primary" style="font-size:1.8rem;"></i>
+                    <p class="mb-0 mt-2 text-muted" style="font-size:.9rem;">
+                        Đơn đã chuyển cho shipper. Nhà hàng không cần thao tác thêm.
+                    </p>
                 </div>
             </div>
         </div>

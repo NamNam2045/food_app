@@ -182,7 +182,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse updateStatus(Long orderId, UpdateOrderStatusRequest request, Long actorId) {
         Order order = findOrder(orderId);
-        validateStatusTransition(order.getStatus(), request.getStatus());
+        OrderStatusTransitions.ensureAllowed(order.getStatus(), request.getStatus());
 
         OrderStatus prev = order.getStatus();
         order.setStatus(request.getStatus());
@@ -222,21 +222,6 @@ public class OrderServiceImpl implements OrderService {
     private Order findOrder(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
-    }
-
-    private void validateStatusTransition(OrderStatus current, OrderStatus next) {
-        Map<OrderStatus, EnumSet<OrderStatus>> allowed = Map.of(
-                OrderStatus.PENDING, EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
-                OrderStatus.CONFIRMED, EnumSet.of(OrderStatus.PREPARING, OrderStatus.CANCELLED),
-                OrderStatus.PREPARING, EnumSet.of(OrderStatus.READY_FOR_PICKUP),
-                OrderStatus.READY_FOR_PICKUP, EnumSet.of(OrderStatus.PICKED_UP),
-                OrderStatus.PICKED_UP, EnumSet.of(OrderStatus.ON_THE_WAY),
-                OrderStatus.ON_THE_WAY, EnumSet.of(OrderStatus.DELIVERED)
-        );
-        if (!allowed.getOrDefault(current, EnumSet.noneOf(OrderStatus.class)).contains(next)) {
-            throw new BusinessRuleException("ORDER_003",
-                    "Không thể chuyển từ trạng thái " + current + " sang " + next);
-        }
     }
 
     private void notifyStatusUpdate(Order order, OrderStatus prevStatus) {

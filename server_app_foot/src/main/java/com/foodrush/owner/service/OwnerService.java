@@ -5,8 +5,12 @@ import com.foodrush.menu.entity.MenuCategory;
 import com.foodrush.menu.entity.MenuItem;
 import com.foodrush.menu.repository.MenuCategoryRepository;
 import com.foodrush.menu.repository.MenuItemRepository;
+import com.foodrush.common.exceptions.BusinessRuleException;
+import com.foodrush.common.exceptions.ResourceNotFoundException;
 import com.foodrush.order.entity.Order;
+import com.foodrush.order.entity.OrderStatusHistory;
 import com.foodrush.order.repository.OrderRepository;
+import com.foodrush.order.service.OrderStatusTransitions;
 import com.foodrush.restaurant.entity.Restaurant;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -136,9 +140,22 @@ public class OwnerService {
 
     public void updateOrderStatus(Long orderId, Long restaurantId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
-                .filter(o -> o.getRestaurant().getId().equals(restaurantId))
-                .orElseThrow(() -> new RuntimeException("Order not found or not yours"));
+                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
+        if (!order.getRestaurant().getId().equals(restaurantId)) {
+            throw new BusinessRuleException("FORBIDDEN", "Đơn hàng này không thuộc nhà hàng của bạn");
+        }
+        OrderStatusTransitions.ensureOwnerAllowed(order.getStatus(), newStatus);
+
         order.setStatus(newStatus);
+        if (newStatus == OrderStatus.CANCELLED) {
+            order.setCancelledAt(LocalDateTime.now());
+            order.setCancellationReason("Nhà hàng huỷ đơn");
+        }
+        order.getStatusHistory().add(OrderStatusHistory.builder()
+                .order(order)
+                .status(newStatus)
+                .notes("Nhà hàng cập nhật trạng thái")
+                .build());
         orderRepository.save(order);
     }
 

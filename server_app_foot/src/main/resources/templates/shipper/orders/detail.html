@@ -16,10 +16,11 @@
                th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></p>
         </div>
         <span th:class="${'ms-auto badge fs-6 ' +
-            (order.status.name() == 'DELIVERED'       ? 'bg-success' :
-             order.status.name() == 'ON_THE_WAY'      ? 'bg-primary' :
-             order.status.name() == 'PICKED_UP'       ? 'bg-info text-dark' :
-             order.status.name() == 'CANCELLED'       ? 'bg-danger'  : 'bg-secondary')}"
+            (order.status.name() == 'DELIVERED'        ? 'bg-success' :
+             order.status.name() == 'ON_THE_WAY'       ? 'bg-primary' :
+             order.status.name() == 'PICKED_UP'        ? 'bg-info text-dark' :
+             order.status.name() == 'READY_FOR_PICKUP' ? 'bg-warning text-dark' :
+             order.status.name() == 'CANCELLED'        ? 'bg-danger'  : 'bg-secondary')}"
               th:text="${order.status.name()}"></span>
     </div>
 
@@ -146,6 +147,10 @@
                         </p>
                         <p th:case="'CANCELLED'" class="text-danger mb-0 text-center">
                             <i class="bi bi-x-circle-fill me-1"></i>Đơn đã huỷ
+                        </p>
+                        <p th:case="*" class="text-muted mb-0 text-center" style="font-size:.85rem;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Đơn chưa sẵn sàng để cập nhật trạng thái.
                         </p>
                     </th:block>
                 </div>
