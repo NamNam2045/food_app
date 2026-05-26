@@ -100,7 +100,7 @@
                 </div>
                 <div class="card-body">
                     <p class="mb-1 fw-semibold" th:text="${order.user.firstName + ' ' + order.user.lastName}"></p>
-                    <p class="mb-1 text-muted" style="font-size:.85rem;" th:text="${order.user.phone}"></p>
+                    <p class="mb-1 text-muted" style="font-size:.85rem;" th:text="${order.user.phoneNumber}"></p>
                     <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.user.email}"></p>
                 </div>
             </div>
@@ -112,7 +112,10 @@
                 </div>
                 <div class="card-body">
                     <p class="mb-1 fw-semibold" th:text="${order.restaurant.name}"></p>
-                    <p class="mb-0 text-muted" style="font-size:.85rem;" th:text="${order.restaurant.address}"></p>
+                    <p class="mb-1 text-muted" style="font-size:.85rem;"
+                       th:text="${order.restaurant.streetAddress + ', ' + order.restaurant.city}"></p>
+                    <p class="mb-0 text-muted" style="font-size:.85rem;" th:if="${order.restaurant.phone}"
+                       th:text="${order.restaurant.phone}"></p>
                 </div>
             </div>
 
